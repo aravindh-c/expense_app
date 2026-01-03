@@ -1,2 +1,3 @@
-rootProject.name = "FamilyExpenseLogger"
+rootProject.name = "expense_app"
+
 include ':app'
