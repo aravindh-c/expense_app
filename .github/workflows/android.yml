@@ -16,20 +16,13 @@ jobs:
         distribution: "temurin"
         java-version: "17"
 
-    - name: Install Gradle 8.2
-      run: |
-        wget https://services.gradle.org/distributions/gradle-8.2-bin.zip
-        unzip gradle-8.2-bin.zip
-        sudo mv gradle-8.2 /opt/gradle
-        echo 'export PATH=/opt/gradle/bin:$PATH' >> $GITHUB_ENV
-
-    - name: Verify Gradle
-      run: gradle -v
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
 
     - name: Build APK
-      run: gradle assembleDebug
+      run: ./gradlew assembleDebug
 
-    - name: Upload APK artifact
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: expense-app-apk
