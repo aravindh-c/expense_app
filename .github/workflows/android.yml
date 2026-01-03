@@ -16,8 +16,11 @@ jobs:
         distribution: "temurin"
         java-version: "17"
 
-    - name: Make gradlew executable
-      run: chmod +x ./gradlew
+    # 🔧 Fix Windows line endings in gradlew and make it executable
+    - name: Fix gradlew line endings
+      run: |
+        sed -i 's/\r$//' ./gradlew
+        chmod +x ./gradlew
 
     - name: Build APK
       run: ./gradlew assembleDebug
