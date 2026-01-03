@@ -16,12 +16,14 @@ jobs:
         distribution: "temurin"
         java-version: "17"
 
-    - name: Install Gradle
+    - name: Install Gradle 8.2
       run: |
-        sudo apt-get update
-        sudo apt-get install -y gradle
+        wget https://services.gradle.org/distributions/gradle-8.2-bin.zip
+        unzip gradle-8.2-bin.zip
+        sudo mv gradle-8.2 /opt/gradle
+        echo 'export PATH=/opt/gradle/bin:$PATH' >> $GITHUB_ENV
 
-    - name: Verify Gradle version
+    - name: Verify Gradle
       run: gradle -v
 
     - name: Build APK
