@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Expense Logger</string>
+
+    <string-array name="expense_type_array">
+        <item>Food</item>
+        <item>Apparel</item>
+        <item>Grocery</item>
+        <item>Entertainment</item>
+        <item>Travel</item>
+        <item>Medical</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="owner_array">
+        <item>Aravindh</item>
+        <item>Deepa</item>
+        <item>Home</item>
+        <item>Parents</item>
+        <item>Other</item>
+    </string-array>
+</resources>
