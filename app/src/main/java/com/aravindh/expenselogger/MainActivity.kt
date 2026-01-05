@@ -1,17 +1,19 @@
-package com.example.expenselogger
+package com.aravindh.expenselogger
 
 import android.app.DatePickerDialog
 import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import com.squareup.okhttp.MediaType
-import com.squareup.okhttp.OkHttpClient
-import com.squareup.okhttp.Request
-import com.squareup.okhttp.RequestBody
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -235,56 +237,57 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendToSheet(
-        date: String,
-        name: String,
-        amount: Double,
-        paymentType: String,
-        expenseType: String,
-        expenseOwner: String,
-        loggedBy: String
-    ) {
-        Toast.makeText(this, "Sending...", Toast.LENGTH_SHORT).show()
+    date: String,
+    name: String,
+    amount: Double,
+    paymentType: String,
+    expenseType: String,
+    expenseOwner: String,
+    loggedBy: String
+) {
+    Toast.makeText(this, "Sending...", Toast.LENGTH_SHORT).show()
 
-        Thread {
-            try {
-                val client = OkHttpClient()
-                val json = JSONObject().apply {
-                    put("date", date)
-                    put("name", name)
-                    put("amount", amount)
-                    put("paymentType", paymentType)
-                    put("expenseType", expenseType)
-                    put("expenseOwner", expenseOwner)
-                    put("loggedBy", loggedBy)
-                }
+    Thread {
+        try {
+            val client = OkHttpClient()
+            val json = JSONObject().apply {
+                put("date", date)
+                put("name", name)
+                put("amount", amount)
+                put("paymentType", paymentType)
+                put("expenseType", expenseType)
+                put("expenseOwner", expenseOwner)
+                put("loggedBy", loggedBy)
+            }
 
-                val mediaType = MediaType.parse("application/json; charset=utf-8")
-                val body = RequestBody.create(mediaType, json.toString())
+            val mediaType = "application/json; charset=utf-8".toMediaType()
+            val body = json.toString().toRequestBody(mediaType)
 
-                val request = Request.Builder()
-                    .url(SCRIPT_URL)
-                    .post(body)
-                    .build()
+            val request = Request.Builder()
+                .url(SCRIPT_URL)
+                .post(body)
+                .build()
 
-                val response = client.newCall(request).execute()
-                val success = response.isSuccessful
+            val response = client.newCall(request).execute()
+            val success = response.isSuccessful
 
-                runOnUiThread {
-                    if (success) {
-                        Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show()
-                        clearForm()
-                    } else {
-                        Toast.makeText(this, "Error: ${response.code()}", Toast.LENGTH_LONG).show()
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                runOnUiThread {
-                    Toast.makeText(this, "Failed: ${e.message}", Toast.LENGTH_LONG).show()
+            runOnUiThread {
+                if (success) {
+                    Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show()
+                    clearForm()
+                } else {
+                    Toast.makeText(this, "Error: ${response.code}", Toast.LENGTH_LONG).show()
                 }
             }
-        }.start()
-    }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            runOnUiThread {
+                Toast.makeText(this, "Failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }.start()
+}
+
 
     private fun clearForm() {
         etName.setText("")
