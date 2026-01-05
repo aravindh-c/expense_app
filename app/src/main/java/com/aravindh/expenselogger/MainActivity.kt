@@ -151,55 +151,87 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupSubmit() {
         btnSubmit.setOnClickListener {
-            val date = etDate.text.toString().trim()
-            val name = etName.text.toString().trim()
-            val amountStr = etAmount.text.toString().trim()
 
-            if (date.isEmpty() || name.isEmpty() || amountStr.isEmpty()) {
-                Toast.makeText(this, "Date, Name, Amount required", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
+		val date = etDate.text.toString().trim()
+		val name = etName.text.toString().trim()
+		val amountStr = etAmount.text.toString().trim()
 
-            val amount = amountStr.toDoubleOrNull()
-            if (amount == null) {
-                Toast.makeText(this, "Amount must be a number", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
+		// --- Date required ---
+		if (date.isEmpty()) {
+			etDate.error = "Please select date"
+			return@setOnClickListener
+		}
 
-            val paymentTypeId = rgPaymentType.checkedRadioButtonId
-            val paymentType = findViewById<RadioButton?>(paymentTypeId)?.text?.toString()
-                ?: run {
-                    Toast.makeText(this, "Select payment type", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
+		// --- Name required ---
+		if (name.isEmpty()) {
+			etName.error = "Please enter description"
+			return@setOnClickListener
+		}
 
-            val expenseTypeSpinnerValue = spExpenseType.selectedItem.toString()
-            val expenseType =
-                if (expenseTypeSpinnerValue.equals("Other", ignoreCase = true)) {
-                    etExpenseTypeOther.text.toString().trim().ifEmpty {
-                        Toast.makeText(this, "Specify expense type", Toast.LENGTH_SHORT).show()
-                        return@setOnClickListener
-                    }
-                } else expenseTypeSpinnerValue
+		// --- Amount required + numeric ---
+		if (amountStr.isEmpty()) {
+			etAmount.error = "Enter amount"
+			return@setOnClickListener
+		}
 
-            val ownerSpinnerValue = spOwner.selectedItem.toString()
-            val expenseOwner =
-                if (ownerSpinnerValue.equals("Other", ignoreCase = true)) {
-                    etOwnerOther.text.toString().trim().ifEmpty {
-                        Toast.makeText(this, "Specify owner", Toast.LENGTH_SHORT).show()
-                        return@setOnClickListener
-                    }
-                } else ownerSpinnerValue
+		val amount = amountStr.toDoubleOrNull()
+		if (amount == null || amount <= 0) {
+			etAmount.error = "Enter valid amount"
+			return@setOnClickListener
+		}
 
-            val loggedById = rgLoggedBy.checkedRadioButtonId
-            val loggedBy = findViewById<RadioButton?>(loggedById)?.text?.toString()
-                ?: run {
-                    Toast.makeText(this, "Select Logged By", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
+		// --- Payment Type required ---
+		val paymentTypeId = rgPaymentType.checkedRadioButtonId
+		if (paymentTypeId == -1) {
+			Toast.makeText(this, "Select Payment Type", Toast.LENGTH_SHORT).show()
+			return@setOnClickListener
+		}
+		val paymentType = findViewById<RadioButton>(paymentTypeId).text.toString()
 
-            sendToSheet(date, name, amount, paymentType, expenseType, expenseOwner, loggedBy)
-        }
+		// --- Expense Type required ---
+		val expenseTypeSpinnerValue = spExpenseType.selectedItem.toString()
+		val expenseType =
+			if (expenseTypeSpinnerValue.equals("Other", ignoreCase = true)) {
+				val other = etExpenseTypeOther.text.toString().trim()
+				if (other.isEmpty()) {
+					etExpenseTypeOther.error = "Enter expense type"
+					return@setOnClickListener
+				}
+				other
+			} else expenseTypeSpinnerValue
+
+		// --- Expense Owner required ---
+		val ownerSpinnerValue = spOwner.selectedItem.toString()
+		val expenseOwner =
+			if (ownerSpinnerValue.equals("Other", ignoreCase = true)) {
+				val other = etOwnerOther.text.toString().trim()
+				if (other.isEmpty()) {
+					etOwnerOther.error = "Enter owner name"
+					return@setOnClickListener
+				}
+				other
+			} else ownerSpinnerValue
+
+		// --- Logged By required ---
+		val loggedById = rgLoggedBy.checkedRadioButtonId
+		if (loggedById == -1) {
+			Toast.makeText(this, "Select Logged By", Toast.LENGTH_SHORT).show()
+			return@setOnClickListener
+		}
+		val loggedBy = findViewById<RadioButton>(loggedById).text.toString()
+
+		// --- All good → submit ---
+		sendToSheet(
+			date,
+			name,
+			amount,
+			paymentType,
+			expenseType,
+			expenseOwner,
+			loggedBy
+		)
+	}
+
     }
 
     private fun sendToSheet(

@@ -2,14 +2,17 @@
     <string name="app_name">Expense Logger</string>
 
     <string-array name="expense_type_array">
-        <item>Food</item>
-        <item>Apparel</item>
-        <item>Grocery</item>
-        <item>Entertainment</item>
-        <item>Travel</item>
-        <item>Medical</item>
-        <item>Other</item>
-    </string-array>
+    <item>Food</item>
+    <item>Apparel</item>
+    <item>Grocery</item>
+    <item>Entertainment</item>
+    <item>Travel</item>
+    <item>Medical</item>
+    <item>Investment</item>
+    <item>Salary</item>
+    <item>Other</item>
+	</string-array>
+
 
     <string-array name="owner_array">
         <item>Aravindh</item>
