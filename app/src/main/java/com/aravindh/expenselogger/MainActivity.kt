@@ -2,7 +2,6 @@ package com.aravindh.expenselogger
 
 import android.app.DatePickerDialog
 import android.os.Bundle
-import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.widget.*
@@ -16,26 +15,23 @@ import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import android.widget.LinearLayout
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        // TODO: put your real Apps Script URL here:
-        private const val SCRIPT_URL =
-            "https://script.google.com/macros/s/AKfycby89w6UX6milK8W3FlS_wwQrctg3a6-j1LnJlAca8hSy1i1tj17f0hcPru4FVZwwjTS/exec"
+        // TODO: Replace with your deployed Apps Script web app exec URL
+        private const val SCRIPT_URL = "https://script.google.com/macros/s/AKfycby89w6UX6milK8W3FlS_wwQrctg3a6-j1LnJlAca8hSy1i1tj17f0hcPru4FVZwwjTS/exec"
         private const val REF_THRESHOLD = 15000.0
     }
 
-    // Page containers
+    // Pages
     private lateinit var pageForm: View
     private lateinit var pageSummary: View
-    private var currentPage = 0  // 0 = form, 1 = summary
+    private var currentPage = 0 // 0=form, 1=summary
 
-    // Gesture detector
-    
-    private lateinit var gestureDetector: GestureDetector
-
+    // Manual swipe
+    private var startX = 0f
+    private val SWIPE_THRESHOLD = 150
 
     // Form views
     private lateinit var etDate: EditText
@@ -68,16 +64,14 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         bindViews()
-        setupGestureDetector()
+        setupSwipe(findViewById(android.R.id.content))
         setupForm()
         setupSummary()
 
-        // Start on form page
         showPage(0)
     }
 
-    // region Binding & setup
-
+    // ---------- Bind ----------
     private fun bindViews() {
         pageForm = findViewById(R.id.pageForm)
         pageSummary = findViewById(R.id.pageSummary)
@@ -107,54 +101,45 @@ class MainActivity : AppCompatActivity() {
         tvDeepaAmount = findViewById(R.id.tvDeepaAmount)
     }
 
-    private fun setupGestureDetector() {
-    gestureDetector = GestureDetector(this, object : GestureDetector.OnGestureListener {
-
-        private val SWIPE_THRESHOLD = 100
-        private val SWIPE_VELOCITY_THRESHOLD = 100
-
-        override fun onFling(
-            e1: MotionEvent?,
-            e2: MotionEvent?,
-            velocityX: Float,
-            velocityY: Float
-        ): Boolean {
-            if (e1 == null || e2 == null) return false
-
-            val diffX = e2.x - e1.x
-            val diffY = e2.y - e1.y
-
-            if (kotlin.math.abs(diffX) > kotlin.math.abs(diffY)) {
-                if (kotlin.math.abs(diffX) > SWIPE_THRESHOLD &&
-                    kotlin.math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD
-                ) {
-                    if (diffX < 0) showPage(1) else showPage(0)
-                    return true
+    // ---------- Swipe (manual, no overrides) ----------
+    private fun setupSwipe(view: View) {
+        view.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    startX = event.x
+                    true
                 }
+                MotionEvent.ACTION_UP -> {
+                    val diffX = event.x - startX
+                    if (kotlin.math.abs(diffX) > SWIPE_THRESHOLD) {
+                        if (diffX < 0) {
+                            // Swipe LEFT -> Summary
+                            showPage(1)
+                            loadMonthlySummary() // refresh on entry
+                        } else {
+                            // Swipe RIGHT -> Form
+                            showPage(0)
+                        }
+                    }
+                    true
+                }
+                else -> false
             }
-            return false
         }
-
-        override fun onDown(e: MotionEvent?): Boolean = true
-        override fun onShowPress(e: MotionEvent?) {}
-        override fun onSingleTapUp(e: MotionEvent?): Boolean = false
-        override fun onScroll(
-            e1: MotionEvent?,
-            e2: MotionEvent?,
-            distanceX: Float,
-            distanceY: Float
-        ): Boolean = false
-
-        override fun onLongPress(e: MotionEvent?) {}
-    })
-}
-
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        gestureDetector.onTouchEvent(event)
-        return super.onTouchEvent(event)
     }
 
+    private fun showPage(page: Int) {
+        currentPage = page
+        if (page == 0) {
+            pageForm.visibility = View.VISIBLE
+            pageSummary.visibility = View.GONE
+        } else {
+            pageForm.visibility = View.GONE
+            pageSummary.visibility = View.VISIBLE
+        }
+    }
+
+    // ---------- Form ----------
     private fun setupForm() {
         // Date picker
         etDate.setOnClickListener { showDatePicker() }
@@ -175,17 +160,11 @@ class MainActivity : AppCompatActivity() {
             ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, expenseTypes)
 
         spExpenseType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                val value = parent.getItemAtPosition(position).toString()
+            override fun onItemSelected(parent: AdapterView<*>, v: View?, pos: Int, id: Long) {
+                val value = parent.getItemAtPosition(pos).toString()
                 etExpenseTypeOther.visibility =
                     if (value.equals("Other", ignoreCase = true)) View.VISIBLE else View.GONE
             }
-
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
@@ -194,58 +173,22 @@ class MainActivity : AppCompatActivity() {
             ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, owners)
 
         spOwner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                val value = parent.getItemAtPosition(position).toString()
+            override fun onItemSelected(parent: AdapterView<*>, v: View?, pos: Int, id: Long) {
+                val value = parent.getItemAtPosition(pos).toString()
                 etOwnerOther.visibility =
                     if (value.equals("Other", ignoreCase = true)) View.VISIBLE else View.GONE
             }
-
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        // Clear errors on typing
+        // Clear inline errors on typing
         etName.addTextChangedListener { etName.error = null }
         etAmount.addTextChangedListener { etAmount.error = null }
         etExpenseTypeOther.addTextChangedListener { etExpenseTypeOther.error = null }
         etOwnerOther.addTextChangedListener { etOwnerOther.error = null }
 
-        // Submit
         btnSubmit.setOnClickListener { validateAndSubmit() }
     }
-
-    private fun setupSummary() {
-        tvRefAmount.text = "₹15,000"
-
-        btnRefreshSummary.setOnClickListener {
-            loadMonthlySummary()
-        }
-    }
-
-    // endregion
-
-    // region Page switching
-
-    private fun showPage(page: Int) {
-        currentPage = page
-        if (page == 0) {
-            pageForm.visibility = View.VISIBLE
-            pageSummary.visibility = View.GONE
-        } else {
-            pageForm.visibility = View.GONE
-            pageSummary.visibility = View.VISIBLE
-            // Fetch summary when we enter summary page
-            loadMonthlySummary()
-        }
-    }
-
-    // endregion
-
-    // region Form logic
 
     private fun showDatePicker() {
         val cal = Calendar.getInstance()
@@ -329,12 +272,15 @@ class MainActivity : AppCompatActivity() {
         etName.setText("")
         etAmount.setText("")
         rgPaymentType.clearCheck()
+
         spExpenseType.setSelection(0)
         etExpenseTypeOther.setText("")
         etExpenseTypeOther.visibility = View.GONE
+
         spOwner.setSelection(0)
         etOwnerOther.setText("")
         etOwnerOther.visibility = View.GONE
+
         rgLoggedBy.clearCheck()
     }
 
@@ -372,43 +318,39 @@ class MainActivity : AppCompatActivity() {
                     .build()
 
                 val response = client.newCall(request).execute()
-                val success = response.isSuccessful
 
                 runOnUiThread {
-                    if (success) {
+                    if (response.isSuccessful) {
                         Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show()
                         clearForm()
-                        // After saving, if user swipes to summary, they see updated data
                     } else {
-                        Toast.makeText(
-                            this,
-                            "Error: ${response.code}",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(this, "Error: ${response.code}", Toast.LENGTH_LONG).show()
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 runOnUiThread {
-                    Toast.makeText(
-                        this,
-                        "Failed: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(this, "Failed: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }.start()
     }
 
-    // endregion
+    // ---------- Summary ----------
+    private fun setupSummary() {
+        tvRefAmount.text = "₹15,000"
 
-    // region Summary logic
+        btnRefreshSummary.setOnClickListener {
+            loadMonthlySummary()
+        }
+    }
 
     private fun loadMonthlySummary() {
         Thread {
             try {
                 val client = OkHttpClient()
                 val url = "$SCRIPT_URL?mode=summary"
+
                 val request = Request.Builder()
                     .url(url)
                     .get()
@@ -417,14 +359,10 @@ class MainActivity : AppCompatActivity() {
                 val response = client.newCall(request).execute()
                 val body = response.body?.string()
 
-                if (!response.isSuccessful || body.isNullOrEmpty()) {
-                    return@Thread
-                }
+                if (!response.isSuccessful || body.isNullOrEmpty()) return@Thread
 
                 val json = JSONObject(body)
-                if (json.optString("status") != "OK") {
-                    return@Thread
-                }
+                if (json.optString("status") != "OK") return@Thread
 
                 val month = json.optString("month", "")
                 val ownerTotals = json.getJSONObject("ownerTotals")
@@ -435,7 +373,6 @@ class MainActivity : AppCompatActivity() {
                     tvSummaryMonth.text = "Month: $month"
                     updateOwnerGraph(aTotal, dTotal)
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -446,7 +383,7 @@ class MainActivity : AppCompatActivity() {
         tvAravindhAmount.text = "Aravindh: ₹%.0f".format(aTotal)
         tvDeepaAmount.text = "Deepa: ₹%.0f".format(dTotal)
 
-        // Compute max among threshold + both owners
+        // Scale bars relative to max among threshold and totals
         val maxVal = maxOf(REF_THRESHOLD, aTotal, dTotal, 1.0)
 
         val refWeight = (REF_THRESHOLD / maxVal * 100).toFloat()
@@ -468,6 +405,4 @@ class MainActivity : AppCompatActivity() {
             barDeepa.layoutParams = this
         }
     }
-
-    // endregion
 }
