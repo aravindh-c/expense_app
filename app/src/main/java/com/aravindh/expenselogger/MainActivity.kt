@@ -7,7 +7,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.GestureDetectorCompat
 import androidx.core.widget.addTextChangedListener
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -34,7 +33,9 @@ class MainActivity : AppCompatActivity() {
     private var currentPage = 0  // 0 = form, 1 = summary
 
     // Gesture detector
-    private lateinit var gestureDetector: GestureDetectorCompat
+    
+    private lateinit var gestureDetector: GestureDetector
+
 
     // Form views
     private lateinit var etDate: EditText
@@ -107,42 +108,47 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupGestureDetector() {
-        gestureDetector = GestureDetectorCompat(
-            this,
-            object : GestureDetector.SimpleOnGestureListener() {
-                private val SWIPE_THRESHOLD = 100
-                private val SWIPE_VELOCITY_THRESHOLD = 100
+    gestureDetector = GestureDetector(this, object : GestureDetector.OnGestureListener {
 
-                override fun onFling(
-                    e1: MotionEvent,
-                    e2: MotionEvent,
-                    velocityX: Float,
-                    velocityY: Float
-                ): Boolean {
+        private val SWIPE_THRESHOLD = 100
+        private val SWIPE_VELOCITY_THRESHOLD = 100
 
-                    if (e1 == null || e2 == null) return false
-                    val diffX = e2.x - e1.x
-                    val diffY = e2.y - e1.y
+        override fun onFling(
+            e1: MotionEvent?,
+            e2: MotionEvent?,
+            velocityX: Float,
+            velocityY: Float
+        ): Boolean {
+            if (e1 == null || e2 == null) return false
 
-                    if (kotlin.math.abs(diffX) > kotlin.math.abs(diffY)) {
-                        if (kotlin.math.abs(diffX) > SWIPE_THRESHOLD
-                            && kotlin.math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD
-                        ) {
-                            if (diffX < 0) {
-                                // Swipe left: form -> summary
-                                showPage(1)
-                            } else {
-                                // Swipe right: summary -> form
-                                showPage(0)
-                            }
-                            return true
-                        }
-                    }
-                    return false
+            val diffX = e2.x - e1.x
+            val diffY = e2.y - e1.y
+
+            if (kotlin.math.abs(diffX) > kotlin.math.abs(diffY)) {
+                if (kotlin.math.abs(diffX) > SWIPE_THRESHOLD &&
+                    kotlin.math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD
+                ) {
+                    if (diffX < 0) showPage(1) else showPage(0)
+                    return true
                 }
             }
-        )
-    }
+            return false
+        }
+
+        override fun onDown(e: MotionEvent?): Boolean = true
+        override fun onShowPress(e: MotionEvent?) {}
+        override fun onSingleTapUp(e: MotionEvent?): Boolean = false
+        override fun onScroll(
+            e1: MotionEvent?,
+            e2: MotionEvent?,
+            distanceX: Float,
+            distanceY: Float
+        ): Boolean = false
+
+        override fun onLongPress(e: MotionEvent?) {}
+    })
+}
+
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         gestureDetector.onTouchEvent(event)
