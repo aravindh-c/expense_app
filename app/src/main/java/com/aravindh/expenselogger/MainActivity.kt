@@ -32,6 +32,8 @@ class MainActivity : AppCompatActivity() {
     // Manual swipe
     private var startX = 0f
     private val SWIPE_THRESHOLD = 150
+    private var startY = 0f
+
 
     // Form views
     private lateinit var etDate: EditText
@@ -64,12 +66,87 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         bindViews()
-        setupSwipe(findViewById(android.R.id.content))
+        setupSwipeOnForm(pageForm)
+        setupSwipeOnSummary(pageSummary)
+
         setupForm()
         setupSummary()
 
         showPage(0)
     }
+    private fun setupSwipeOnForm(formView: View) {
+    formView.setOnTouchListener { v, event ->
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                startX = event.x
+                startY = event.y
+                v.parent?.requestDisallowInterceptTouchEvent(true)
+                false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val dx = event.x - startX
+                val dy = event.y - startY
+
+                // If it's more horizontal than vertical, treat it as swipe gesture
+                if (kotlin.math.abs(dx) > kotlin.math.abs(dy) && kotlin.math.abs(dx) > 30) {
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                    true
+                } else {
+                    // Let vertical scrolling work normally
+                    false
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                val diffX = event.x - startX
+                val diffY = event.y - startY
+
+                // Only trigger when it's mostly horizontal
+                if (kotlin.math.abs(diffX) > SWIPE_THRESHOLD && kotlin.math.abs(diffX) > kotlin.math.abs(diffY)) {
+                    if (diffX < 0) {
+                        // Swipe LEFT -> Summary
+                        showPage(1)
+                        loadMonthlySummary()
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            }
+            else -> false
+        }
+    }
+}
+
+private fun setupSwipeOnSummary(summaryView: View) {
+    summaryView.setOnTouchListener { _, event ->
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                startX = event.x
+                startY = event.y
+                true
+            }
+            MotionEvent.ACTION_UP -> {
+                val diffX = event.x - startX
+                val diffY = event.y - startY
+
+                if (kotlin.math.abs(diffX) > SWIPE_THRESHOLD && kotlin.math.abs(diffX) > kotlin.math.abs(diffY)) {
+                    if (diffX > 0) {
+                        // Swipe RIGHT -> Form
+                        showPage(0)
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            }
+            else -> false
+        }
+    }
+}
 
     // ---------- Bind ----------
     private fun bindViews() {
