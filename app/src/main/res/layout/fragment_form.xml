@@ -70,8 +70,8 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <RadioButton android:text="Credit"/>
-            <RadioButton android:text="Debit" android:layout_marginStart="16dp"/>
+            <RadioButton android:text="Credit Card"/>
+            <RadioButton android:text="Debit Card" android:layout_marginStart="16dp"/>
         </RadioGroup>
 
         <!-- Expense Type Label -->
