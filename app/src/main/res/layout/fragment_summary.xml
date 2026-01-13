@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/summaryRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Month Title -->
+    <TextView
+        android:id="@+id/tvSummaryMonth"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Month: Jan 2026"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:paddingBottom="12dp"/>
+
+    <!-- Refresh Button -->
+    <Button
+        android:id="@+id/btnRefreshSummary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Refresh Summary"/>
+
+    <!-- Spacer -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="20dp"/>
+
+    <!-- Graph Container -->
+    <LinearLayout
+        android:id="@+id/graphContainer"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:orientation="vertical"
+        android:background="#F5F5F5"
+        android:padding="8dp">
+
+        <!-- Reference ₹15k bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:orientation="horizontal">
+
+            <View
+                android:id="@+id/barRef"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="#BDBDBD"/>
+
+            <TextView
+                android:id="@+id/tvRefAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:paddingLeft="6dp"
+                android:text="₹15000"/>
+        </LinearLayout>
+
+        <!-- Aravindh bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <View
+                android:id="@+id/barAravindh"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0"
+                android:background="#2ECC71"/>
+
+            <TextView
+                android:id="@+id/tvAravindhAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:paddingLeft="6dp"
+                android:text="Aravindh: ₹0"/>
+        </LinearLayout>
+
+        <!-- Deepa bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <View
+                android:id="@+id/barDeepa"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0"
+                android:background="#F1C40F"/>
+
+            <TextView
+                android:id="@+id/tvDeepaAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:paddingLeft="6dp"
+                android:text="Deepa: ₹0"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
