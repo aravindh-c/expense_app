@@ -3,5 +3,105 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Paste your form LinearLayout here -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Date -->
+        <EditText
+            android:id="@+id/etDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Date (yyyy-mm-dd)"
+            android:focusable="false"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnYesterday"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Yesterday"/>
+
+            <Button
+                android:id="@+id/btnToday"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Today"/>
+        </LinearLayout>
+
+        <!-- Description -->
+        <EditText
+            android:id="@+id/etName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description"/>
+
+        <!-- Amount -->
+        <EditText
+            android:id="@+id/etAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Amount"
+            android:inputType="numberDecimal"/>
+
+        <!-- Payment Type -->
+        <RadioGroup
+            android:id="@+id/rgPaymentType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <RadioButton android:text="Credit"/>
+            <RadioButton android:text="Debit"/>
+        </RadioGroup>
+
+        <!-- Expense Type -->
+        <Spinner
+            android:id="@+id/spExpenseType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/etExpenseTypeOther"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter expense type"
+            android:visibility="gone"/>
+
+        <!-- Owner -->
+        <Spinner
+            android:id="@+id/spOwner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/etOwnerOther"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter owner"
+            android:visibility="gone"/>
+
+        <!-- Logged By -->
+        <RadioGroup
+            android:id="@+id/rgLoggedBy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <RadioButton android:text="Aravindh"/>
+            <RadioButton android:text="Deepa"/>
+        </RadioGroup>
+
+        <!-- Submit -->
+        <Button
+            android:id="@+id/btnSubmit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Submit"/>
+
+    </LinearLayout>
 </ScrollView>
