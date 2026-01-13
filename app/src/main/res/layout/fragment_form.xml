@@ -20,29 +20,32 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:layout_marginTop="6dp">
 
             <Button
                 android:id="@+id/btnYesterday"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Yesterday"/>
+                android:text="YESTERDAY"/>
 
             <Button
                 android:id="@+id/btnToday"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Today"/>
+                android:text="TODAY"
+                android:layout_marginStart="8dp"/>
         </LinearLayout>
 
-        <!-- Description -->
+        <!-- Name -->
         <EditText
             android:id="@+id/etName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Description"/>
+            android:hint="What is this expense for?"
+            android:layout_marginTop="12dp"/>
 
         <!-- Amount -->
         <EditText
@@ -50,18 +53,35 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Amount"
-            android:inputType="numberDecimal"/>
+            android:inputType="numberDecimal"
+            android:layout_marginTop="12dp"/>
 
-        <!-- Payment Type -->
+        <!-- Payment Type Label -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Payment Type"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
         <RadioGroup
             android:id="@+id/rgPaymentType"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
             <RadioButton android:text="Credit"/>
-            <RadioButton android:text="Debit"/>
+            <RadioButton android:text="Debit" android:layout_marginStart="16dp"/>
         </RadioGroup>
 
-        <!-- Expense Type -->
+        <!-- Expense Type Label -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Expense Type"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
         <Spinner
             android:id="@+id/spExpenseType"
             android:layout_width="match_parent"
@@ -71,10 +91,17 @@
             android:id="@+id/etExpenseTypeOther"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter expense type"
+            android:hint="If Other, type here"
             android:visibility="gone"/>
 
-        <!-- Owner -->
+        <!-- Owner Label -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Expense Owner"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
         <Spinner
             android:id="@+id/spOwner"
             android:layout_width="match_parent"
@@ -84,24 +111,32 @@
             android:id="@+id/etOwnerOther"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter owner"
+            android:hint="If Other, type here"
             android:visibility="gone"/>
 
-        <!-- Logged By -->
+        <!-- Logged By Label -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Logged By"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
         <RadioGroup
             android:id="@+id/rgLoggedBy"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
             <RadioButton android:text="Aravindh"/>
-            <RadioButton android:text="Deepa"/>
+            <RadioButton android:text="Deepa" android:layout_marginStart="16dp"/>
         </RadioGroup>
 
-        <!-- Submit -->
         <Button
             android:id="@+id/btnSubmit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Submit"/>
-
+            android:text="SUBMIT"
+            android:layout_marginTop="18dp"/>
     </LinearLayout>
 </ScrollView>
