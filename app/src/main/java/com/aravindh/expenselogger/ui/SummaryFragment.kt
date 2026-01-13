@@ -16,7 +16,7 @@ import org.json.JSONObject
 class SummaryFragment : Fragment() {
 
     companion object {
-        private const val SCRIPT_URL = "https://script.google.com/macros/s/XXXXXXXXXXXXXXX/exec"
+        private const val SCRIPT_URL = "https://script.google.com/macros/s/AKfycby89w6UX6milK8W3FlS_wwQrctg3a6-j1LnJlAca8hSy1i1tj17f0hcPru4FVZwwjTS/exec"
         private const val REF_THRESHOLD = 15000.0
     }
 
