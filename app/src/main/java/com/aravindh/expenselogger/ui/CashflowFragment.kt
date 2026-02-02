@@ -248,6 +248,9 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
             applyBar(barF, netF)
         }
     }
+fun refreshCashflow() {
+    refreshAll()
+}
 
     private fun fetchLast2() {
         Thread {

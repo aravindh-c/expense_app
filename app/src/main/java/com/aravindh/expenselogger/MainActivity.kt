@@ -3,6 +3,7 @@ package com.aravindh.expenselogger
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
+import com.aravindh.expenselogger.ui.CashflowFragment
 import com.aravindh.expenselogger.ui.PagerAdapter
 import com.aravindh.expenselogger.ui.SummaryFragment
 
@@ -15,18 +16,19 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         viewPager = findViewById(R.id.viewPager)
-        val adapter = PagerAdapter(this)
-        viewPager.adapter = adapter
+        viewPager.adapter = PagerAdapter(this)
 
-        // Refresh summary whenever user lands on page-2
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                if (position == 1) {
-                    val frag = supportFragmentManager.findFragmentByTag("f1")
-                    if (frag is SummaryFragment) {
-                        frag.refreshSummary()
-                    }
+
+                // ViewPager2 fragment tags follow pattern "f0", "f1", "f2"...
+                val tag = "f$position"
+                val frag = supportFragmentManager.findFragmentByTag(tag)
+
+                when (position) {
+                    1 -> (frag as? SummaryFragment)?.refreshSummary()
+                    2 -> (frag as? CashflowFragment)?.refreshCashflow()
                 }
             }
         })

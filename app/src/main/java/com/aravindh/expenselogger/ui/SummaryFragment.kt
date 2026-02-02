@@ -243,6 +243,9 @@ class SummaryFragment : Fragment(R.layout.fragment_summary) {
             guideRef.requestLayout()
         }
     }
+    fun refreshSummary() {
+    refreshAll()
+}
 
     private fun fetchLast2() {
         Thread {

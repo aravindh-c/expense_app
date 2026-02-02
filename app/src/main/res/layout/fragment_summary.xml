@@ -35,7 +35,7 @@
     android:layout_marginTop="8dp"/>
 
 <TextView
-    android:id="@+id/tvAlert"
+    android:id="@+id/tvAlerts"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:text=""
@@ -45,8 +45,9 @@
     android:id="@+id/tvLast2"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:text="Last entries:"
+    android:text="Last 2: -"
     android:layout_marginTop="10dp"/>
+
 
     <TextView
         android:id="@+id/tvMonthLabel"
