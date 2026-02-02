@@ -12,52 +12,62 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.max
 
-class SummaryFragment : Fragment(R.layout.fragment_summary) {
+class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
 
     // ✅ SET YOUR DEPLOYED APPS SCRIPT WEB APP URL HERE
-    // Example: https://script.google.com/macros/s/XXXX/exec
     private val SCRIPT_URL = "PASTE_YOUR_SCRIPT_URL_HERE"
 
     private lateinit var spMonth: Spinner
     private lateinit var btnRefresh: Button
-
-    private lateinit var tvFamilyTotal: TextView
-    private lateinit var tvAlerts: TextView
-    private lateinit var tvLast2: TextView
     private lateinit var tvMonthLabel: TextView
 
-    private lateinit var graphContainer: ConstraintLayout
-    private lateinit var guideRef: Guideline
-    private lateinit var tvRefAmount: TextView
+    private lateinit var tvFamily: TextView
+    private lateinit var tvLast2: TextView
+
+    private lateinit var graph: ConstraintLayout
+    private lateinit var guideZero: Guideline
 
     private lateinit var barA: View
     private lateinit var barD: View
-    private lateinit var tvAAmount: TextView
-    private lateinit var tvDAmount: TextView
+    private lateinit var barF: View
+
+    private lateinit var tvNetA: TextView
+    private lateinit var tvNetD: TextView
+    private lateinit var tvNetF: TextView
+
+    private lateinit var tvBreakA: TextView
+    private lateinit var tvBreakD: TextView
+    private lateinit var tvBreakF: TextView
 
     private val client = OkHttpClient()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        spMonth = view.findViewById(R.id.spMonth)
-        btnRefresh = view.findViewById(R.id.btnRefreshSummary)
+        spMonth = view.findViewById(R.id.spMonthCashflow)
+        btnRefresh = view.findViewById(R.id.btnRefreshCashflow)
+        tvMonthLabel = view.findViewById(R.id.tvCashflowMonthLabel)
 
-        tvFamilyTotal = view.findViewById(R.id.tvFamilyTotal)
-        tvAlerts = view.findViewById(R.id.tvAlerts)
-        tvLast2 = view.findViewById(R.id.tvLast2)
-        tvMonthLabel = view.findViewById(R.id.tvMonthLabel)
+        tvFamily = view.findViewById(R.id.tvCashflowFamily)
+        tvLast2 = view.findViewById(R.id.tvLast2Cashflow)
 
-        graphContainer = view.findViewById(R.id.graphContainer)
-        guideRef = view.findViewById(R.id.guideRef)
-        tvRefAmount = view.findViewById(R.id.tvRefAmount)
+        graph = view.findViewById(R.id.cashGraphContainer)
+        guideZero = view.findViewById(R.id.guideZero)
 
-        barA = view.findViewById(R.id.barAravindh)
-        barD = view.findViewById(R.id.barDeepa)
-        tvAAmount = view.findViewById(R.id.tvAravindhAmount)
-        tvDAmount = view.findViewById(R.id.tvDeepaAmount)
+        barA = view.findViewById(R.id.barCashAravindh)
+        barD = view.findViewById(R.id.barCashDeepa)
+        barF = view.findViewById(R.id.barCashFamily)
+
+        tvNetA = view.findViewById(R.id.tvNetAravindh)
+        tvNetD = view.findViewById(R.id.tvNetDeepa)
+        tvNetF = view.findViewById(R.id.tvNetFamily)
+
+        tvBreakA = view.findViewById(R.id.tvBreakAravindh)
+        tvBreakD = view.findViewById(R.id.tvBreakDeepa)
+        tvBreakF = view.findViewById(R.id.tvBreakFamily)
 
         btnRefresh.setOnClickListener { refreshAll() }
 
@@ -72,17 +82,15 @@ class SummaryFragment : Fragment(R.layout.fragment_summary) {
     }
 
     private fun refreshAll() {
-        val monthValue = getSelectedMonthValue()
-        if (monthValue.isEmpty()) return
-
-        setMonthLabel(monthValue)
-        fetchSummary(monthValue) { ok ->
+        val month = getSelectedMonthValue()
+        if (month.isEmpty()) return
+        setMonthLabel(month)
+        fetchCashflow(month) { ok ->
             if (ok) fetchLast2()
         }
     }
 
     private fun setMonthSpinner(months: List<String>) {
-        // months are yyyy-MM
         val display = months.map { yyyyMm ->
             try {
                 val dfIn = SimpleDateFormat("yyyy-MM", Locale.getDefault())
@@ -137,9 +145,7 @@ class SummaryFragment : Fragment(R.layout.fragment_summary) {
                 val json = JSONObject(body)
                 val arr = json.optJSONArray("months")
                 val list = mutableListOf<String>()
-                if (arr != null) {
-                    for (i in 0 until arr.length()) list.add(arr.getString(i))
-                }
+                if (arr != null) for (i in 0 until arr.length()) list.add(arr.getString(i))
 
                 requireActivity().runOnUiThread { onDone(list) }
             } catch (_: Exception) {
@@ -148,99 +154,98 @@ class SummaryFragment : Fragment(R.layout.fragment_summary) {
         }.start()
     }
 
-    private fun fetchSummary(month: String, onDone: (Boolean) -> Unit) {
+    private fun fetchCashflow(month: String, onDone: (Boolean) -> Unit) {
         Thread {
             try {
-                val url = "$SCRIPT_URL?mode=summary&month=$month"
+                val url = "$SCRIPT_URL?mode=cashflow&month=$month"
                 val req = Request.Builder().url(url).get().build()
                 val res = client.newCall(req).execute()
                 val body = res.body?.string().orEmpty()
 
                 if (!res.isSuccessful) {
                     requireActivity().runOnUiThread {
-                        Toast.makeText(requireContext(), "Summary error: ${res.code}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Cashflow error: ${res.code}", Toast.LENGTH_SHORT).show()
                         onDone(false)
                     }
                     return@Thread
                 }
 
                 val json = JSONObject(body)
-                val totals = json.getJSONObject("ownerTotals")
-                val a = totals.optDouble("Aravindh", 0.0).toFloat()
-                val d = totals.optDouble("Deepa", 0.0).toFloat()
+                val users = json.getJSONObject("users")
+                val family = json.getJSONObject("family")
 
-                val family = json.optDouble("familyTotal", (a + d).toDouble()).toFloat()
-                val limit = json.optDouble("limit", 15000.0).toFloat()
+                fun readUser(obj: JSONObject): FloatArray {
+                    val income = obj.optDouble("income", 0.0).toFloat()
+                    val spend = obj.optDouble("spend", 0.0).toFloat()
+                    val settlement = obj.optDouble("settlement", 0.0).toFloat()
+                    val saving = obj.optDouble("saving", 0.0).toFloat()
+                    val out = spend + settlement + saving
+                    val net = obj.optDouble("net", (income - out).toDouble()).toFloat()
+                    return floatArrayOf(income, out, net)
+                }
 
-                val alerts = json.optJSONObject("alerts")
-                val aAlert = alerts?.optBoolean("Aravindh", false) ?: false
-                val dAlert = alerts?.optBoolean("Deepa", false) ?: false
+                val a = readUser(users.getJSONObject("Aravindh"))
+                val d = readUser(users.getJSONObject("Deepa"))
+                val f = readUser(family)
 
                 requireActivity().runOnUiThread {
-                    tvFamilyTotal.text = "Family Total: ₹%.0f".format(family)
-                    tvAlerts.text = when {
-                        aAlert && dAlert -> "⚠️ Both crossed ₹%.0f".format(limit)
-                        aAlert -> "⚠️ Aravindh crossed ₹%.0f".format(limit)
-                        dAlert -> "⚠️ Deepa crossed ₹%.0f".format(limit)
-                        else -> ""
-                    }
+                    tvBreakA.text = "In ₹%.0f / Out ₹%.0f".format(a[0], a[1])
+                    tvBreakD.text = "In ₹%.0f / Out ₹%.0f".format(d[0], d[1])
+                    tvBreakF.text = "In ₹%.0f / Out ₹%.0f".format(f[0], f[1])
 
-                    tvAAmount.text = "₹%.0f".format(a)
-                    tvDAmount.text = "₹%.0f".format(d)
+                    tvNetA.text = "₹%.0f".format(a[2])
+                    tvNetD.text = "₹%.0f".format(d[2])
+                    tvNetF.text = "₹%.0f".format(f[2])
 
-                    tvRefAmount.text = "Rs.%.0f".format(limit)
+                    tvFamily.text = "Family: Income ₹%.0f | Out ₹%.0f | Net ₹%.0f".format(f[0], f[1], f[2])
 
-                    // update bar heights + ref line once container size is known
-                    renderBarsAndRefLine(a, d, limit)
-
+                    renderNetBars(a[2], d[2], f[2])
                     onDone(true)
                 }
 
             } catch (_: Exception) {
                 requireActivity().runOnUiThread {
-                    Toast.makeText(requireContext(), "Summary parse error", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Cashflow parse error", Toast.LENGTH_SHORT).show()
                     onDone(false)
                 }
             }
         }.start()
     }
 
-    private fun renderBarsAndRefLine(a: Float, d: Float, limit: Float) {
-        // Wait until layout measured
-        graphContainer.post {
-            val containerH = graphContainer.height
-            if (containerH <= 0) return@post
+    private fun renderNetBars(netA: Float, netD: Float, netF: Float) {
+        graph.post {
+            val h = graph.height
+            if (h <= 0) return@post
 
-            // Some headroom so the ref line/label never goes out of frame
-            val dataMax = max(a, d)
-            val axisMax = max(limit, dataMax) * 1.20f  // ✅ 20% headroom
+            // Zero line at center
+            val params = guideZero.layoutParams as ConstraintLayout.LayoutParams
+            params.guidePercent = 0.5f
+            guideZero.layoutParams = params
 
-            // Convert values to bar heights
-            fun heightFor(value: Float): Int {
-                val ratio = (value / axisMax).coerceIn(0f, 1f)
-                // Keep minimum visible bar (tiny spend still visible)
-                val minPx = (containerH * 0.04f).toInt().coerceAtLeast(8)
-                val h = (containerH * ratio).toInt()
-                return max(h, minPx)
+            val maxAbs = max(max(abs(netA), abs(netD)), abs(netF)).coerceAtLeast(1f)
+            val pad = (maxAbs * 0.20f).coerceAtLeast(1000f)
+            val axis = maxAbs + pad
+
+            fun applyBar(bar: View, net: Float) {
+                val ratio = (abs(net) / axis).coerceIn(0f, 1f)
+                val usable = (h * 0.45f).toInt() // top half or bottom half
+                val minPx = (h * 0.05f).toInt().coerceAtLeast(8)
+                val barH = max((usable * ratio).toInt(), minPx)
+
+                val lp = bar.layoutParams
+                lp.height = barH
+                bar.layoutParams = lp
+
+                // anchor: bottom half for positive (grow up), top half for negative (grow down)
+                val flp = bar.layoutParams as FrameLayout.LayoutParams
+                flp.gravity = if (net >= 0f) (android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL)
+                else (android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL)
+                bar.layoutParams = flp
             }
 
-            barA.layoutParams = barA.layoutParams.apply { height = heightFor(a) }
-            barD.layoutParams = barD.layoutParams.apply { height = heightFor(d) }
-            barA.requestLayout()
-            barD.requestLayout()
-
-            // Guideline percent is measured from TOP (0 = top, 1 = bottom)
-            // We want ref line at "limit" value, where 0 is bottom.
-            val rawFromBottom = (limit / axisMax).coerceIn(0f, 1f)
-            val percentFromTop = (1f - rawFromBottom)
-
-            // Clamp so it never touches top edge (your complaint)
-            val clamped = percentFromTop.coerceIn(0.06f, 0.94f)
-
-            val params = guideRef.layoutParams as ConstraintLayout.LayoutParams
-            params.guidePercent = clamped
-            guideRef.layoutParams = params
-            guideRef.requestLayout()
+            applyBar(barA, netA)
+            applyBar(barD, netD)
+            applyBar(barF, netF)
         }
     }
 

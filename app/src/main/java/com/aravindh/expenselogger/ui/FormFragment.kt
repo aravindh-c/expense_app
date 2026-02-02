@@ -36,6 +36,7 @@ class FormFragment : Fragment() {
         val etDate = root.findViewById<EditText>(R.id.etDate)
         val btnYesterday = root.findViewById<Button>(R.id.btnYesterday)
         val btnToday = root.findViewById<Button>(R.id.btnToday)
+        val spTxNature = root.findViewById<Spinner>(R.id.spTxNature)
 
         val etName = root.findViewById<EditText>(R.id.etName)
         val etAmount = root.findViewById<EditText>(R.id.etAmount)
@@ -79,6 +80,27 @@ class FormFragment : Fragment() {
 
         // --- Owner spinner ---
         val owners = resources.getStringArray(R.array.owner_array)
+        spTxNature.adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_dropdown_item,
+            resources.getStringArray(R.array.tx_nature)
+        )
+        spTxNature.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+    override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+        val nature = parent.getItemAtPosition(pos).toString()
+        when (nature) {
+            "INCOME" -> setCategoryAdapter(R.array.cat_income)
+            "SETTLEMENT" -> setCategoryAdapter(R.array.cat_settlement)
+            "SAVING" -> setCategoryAdapter(R.array.cat_saving)
+            else -> setCategoryAdapter(R.array.cat_spend)
+        }
+        // hide "other" input by default; show only if selected "Other"
+        etExpenseTypeOther.visibility = View.GONE
+        spExpenseType.setSelection(0)
+    }
+    override fun onNothingSelected(parent: AdapterView<*>) {}
+}
+
         spOwner.adapter =
             ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, owners)
 
@@ -198,6 +220,8 @@ class FormFragment : Fragment() {
                     put("expenseType", expenseType)
                     put("expenseOwner", expenseOwner)
                     put("loggedBy", loggedBy)
+                    put("txNature", spTxNature.selectedItem.toString())
+
                 }
 
                 val body = payload.toString()
@@ -225,6 +249,13 @@ class FormFragment : Fragment() {
             }
         }.start()
     }
+    fun setCategoryAdapter(arrayRes: Int) {
+    spExpenseType.adapter = ArrayAdapter(
+        requireContext(),
+        android.R.layout.simple_spinner_dropdown_item,
+        resources.getStringArray(arrayRes)
+    )
+}
 
     private fun toast(msg: String) {
         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()

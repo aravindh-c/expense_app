@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Month dropdown + Refresh -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <Spinner
+            android:id="@+id/spMonthCashflow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+
+        <Button
+            android:id="@+id/btnRefreshCashflow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="REFRESH"
+            android:layout_marginStart="12dp"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvCashflowMonthLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Month: -"
+        android:paddingTop="8dp"
+        android:textStyle="bold"/>
+
+    <!-- Family totals -->
+    <TextView
+        android:id="@+id/tvCashflowFamily"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Family: Income ₹0 | Out ₹0 | Net ₹0"
+        android:textStyle="bold"
+        android:layout_marginTop="10dp"/>
+
+    <!-- Legend -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="10dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Aravindh"
+            android:padding="8dp"
+            android:background="#E8F5E9" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Deepa"
+            android:padding="8dp"
+            android:layout_marginStart="10dp"
+            android:background="#FFF8E1" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Family"
+            android:padding="8dp"
+            android:layout_marginStart="10dp"
+            android:background="#E3F2FD" />
+    </LinearLayout>
+
+    <!-- Graph Area -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cashGraphContainer"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginTop="14dp"
+        android:background="#F5F5F5"
+        android:padding="12dp">
+
+        <!-- 0 line guideline (middle) -->
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideZero"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.5" />
+
+        <!-- Zero line -->
+        <View
+            android:id="@+id/zeroLine"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:background="#9E9E9E"
+            app:layout_constraintTop_toTopOf="@id/guideZero"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <TextView
+            android:id="@+id/tvZero"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/zeroLine"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Bars row fills whole container -->
+        <LinearLayout
+            android:id="@+id/barsRowCash"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- Aravindh -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvNetAravindh"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="₹0"
+                    android:textStyle="bold"
+                    android:paddingBottom="6dp"/>
+
+                <FrameLayout
+                    android:layout_width="60dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1">
+
+                    <View
+                        android:id="@+id/barCashAravindh"
+                        android:layout_width="44dp"
+                        android:layout_height="10dp"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:background="#2ECC71"/>
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvBreakAravindh"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="In ₹0 / Out ₹0"
+                    android:paddingTop="6dp"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+            <!-- Deepa -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvNetDeepa"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="₹0"
+                    android:textStyle="bold"
+                    android:paddingBottom="6dp"/>
+
+                <FrameLayout
+                    android:layout_width="60dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1">
+
+                    <View
+                        android:id="@+id/barCashDeepa"
+                        android:layout_width="44dp"
+                        android:layout_height="10dp"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:background="#F1C40F"/>
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvBreakDeepa"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="In ₹0 / Out ₹0"
+                    android:paddingTop="6dp"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+            <!-- Family -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvNetFamily"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="₹0"
+                    android:textStyle="bold"
+                    android:paddingBottom="6dp"/>
+
+                <FrameLayout
+                    android:layout_width="60dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1">
+
+                    <View
+                        android:id="@+id/barCashFamily"
+                        android:layout_width="44dp"
+                        android:layout_height="10dp"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:background="#2196F3"/>
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvBreakFamily"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="In ₹0 / Out ₹0"
+                    android:paddingTop="6dp"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Last 2 records -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Last 2 entries"
+        android:textStyle="bold"
+        android:layout_marginTop="14dp"/>
+
+    <TextView
+        android:id="@+id/tvLast2Cashflow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Last 2: -"
+        android:layout_marginTop="6dp"/>
+
+</LinearLayout>
