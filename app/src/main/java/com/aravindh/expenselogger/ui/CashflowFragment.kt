@@ -17,8 +17,9 @@ import kotlin.math.max
 
 class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
 
-    // ✅ SET YOUR DEPLOYED APPS SCRIPT WEB APP URL HERE
-    private val SCRIPT_URL = "PASTE_YOUR_SCRIPT_URL_HERE"
+    // ✅ PUT YOUR DEPLOYED APPS SCRIPT WEB APP URL HERE
+    // Example: https://script.google.com/macros/s/XXXX/exec
+    private val SCRIPT_URL = "https://script.google.com/macros/s/AKfycby89w6UX6milK8W3FlS_wwQrctg3a6-j1LnJlAca8hSy1i1tj17f0hcPru4FVZwwjTS/exec"
 
     private lateinit var spMonth: Spinner
     private lateinit var btnRefresh: Button
@@ -81,6 +82,13 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
         }
     }
 
+    /**
+     * Called by MainActivity when user swipes to this page.
+     */
+    fun refreshCashflow() {
+        refreshAll()
+    }
+
     private fun refreshAll() {
         val month = getSelectedMonthValue()
         if (month.isEmpty()) return
@@ -91,6 +99,7 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
     }
 
     private fun setMonthSpinner(months: List<String>) {
+        // months are yyyy-MM
         val display = months.map { yyyyMm ->
             try {
                 val dfIn = SimpleDateFormat("yyyy-MM", Locale.getDefault())
@@ -174,32 +183,32 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
                 val users = json.getJSONObject("users")
                 val family = json.getJSONObject("family")
 
-                fun readUser(obj: JSONObject): FloatArray {
+                fun readUser(obj: JSONObject): Triple<Float, Float, Float> {
                     val income = obj.optDouble("income", 0.0).toFloat()
                     val spend = obj.optDouble("spend", 0.0).toFloat()
                     val settlement = obj.optDouble("settlement", 0.0).toFloat()
                     val saving = obj.optDouble("saving", 0.0).toFloat()
                     val out = spend + settlement + saving
                     val net = obj.optDouble("net", (income - out).toDouble()).toFloat()
-                    return floatArrayOf(income, out, net)
+                    return Triple(income, out, net)
                 }
 
-                val a = readUser(users.getJSONObject("Aravindh"))
-                val d = readUser(users.getJSONObject("Deepa"))
-                val f = readUser(family)
+                val (aIn, aOut, aNet) = readUser(users.getJSONObject("Aravindh"))
+                val (dIn, dOut, dNet) = readUser(users.getJSONObject("Deepa"))
+                val (fIn, fOut, fNet) = readUser(family)
 
                 requireActivity().runOnUiThread {
-                    tvBreakA.text = "In ₹%.0f / Out ₹%.0f".format(a[0], a[1])
-                    tvBreakD.text = "In ₹%.0f / Out ₹%.0f".format(d[0], d[1])
-                    tvBreakF.text = "In ₹%.0f / Out ₹%.0f".format(f[0], f[1])
+                    tvBreakA.text = "In ₹%.0f / Out ₹%.0f".format(aIn, aOut)
+                    tvBreakD.text = "In ₹%.0f / Out ₹%.0f".format(dIn, dOut)
+                    tvBreakF.text = "In ₹%.0f / Out ₹%.0f".format(fIn, fOut)
 
-                    tvNetA.text = "₹%.0f".format(a[2])
-                    tvNetD.text = "₹%.0f".format(d[2])
-                    tvNetF.text = "₹%.0f".format(f[2])
+                    tvNetA.text = "₹%.0f".format(aNet)
+                    tvNetD.text = "₹%.0f".format(dNet)
+                    tvNetF.text = "₹%.0f".format(fNet)
 
-                    tvFamily.text = "Family: Income ₹%.0f | Out ₹%.0f | Net ₹%.0f".format(f[0], f[1], f[2])
+                    tvFamily.text = "Family: Income ₹%.0f | Out ₹%.0f | Net ₹%.0f".format(fIn, fOut, fNet)
 
-                    renderNetBars(a[2], d[2], f[2])
+                    renderNetBars(aNet, dNet, fNet)
                     onDone(true)
                 }
 
@@ -212,35 +221,45 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
         }.start()
     }
 
+    /**
+     * Renders bars around a 0-line in the middle.
+     * Positive net grows upwards from the center line.
+     * Negative net grows downwards from the center line.
+     */
     private fun renderNetBars(netA: Float, netD: Float, netF: Float) {
         graph.post {
-            val h = graph.height
-            if (h <= 0) return@post
+            val containerH = graph.height
+            if (containerH <= 0) return@post
 
-            // Zero line at center
-            val params = guideZero.layoutParams as ConstraintLayout.LayoutParams
-            params.guidePercent = 0.5f
-            guideZero.layoutParams = params
+            // Zero line stays exactly mid
+            val guideParams = guideZero.layoutParams as ConstraintLayout.LayoutParams
+            guideParams.guidePercent = 0.5f
+            guideZero.layoutParams = guideParams
 
+            // scale based on largest absolute net
             val maxAbs = max(max(abs(netA), abs(netD)), abs(netF)).coerceAtLeast(1f)
-            val pad = (maxAbs * 0.20f).coerceAtLeast(1000f)
+            val pad = (maxAbs * 0.20f).coerceAtLeast(1000f) // headroom
             val axis = maxAbs + pad
+
+            val halfH = (containerH * 0.45f).toInt() // keep margins for labels
+            val minPx = (containerH * 0.05f).toInt().coerceAtLeast(8)
 
             fun applyBar(bar: View, net: Float) {
                 val ratio = (abs(net) / axis).coerceIn(0f, 1f)
-                val usable = (h * 0.45f).toInt() // top half or bottom half
-                val minPx = (h * 0.05f).toInt().coerceAtLeast(8)
-                val barH = max((usable * ratio).toInt(), minPx)
+                val h = max((halfH * ratio).toInt(), minPx)
 
                 val lp = bar.layoutParams
-                lp.height = barH
+                lp.height = h
                 bar.layoutParams = lp
 
-                // anchor: bottom half for positive (grow up), top half for negative (grow down)
+                // bar view lives inside FrameLayout in XML -> use FrameLayout.LayoutParams
                 val flp = bar.layoutParams as FrameLayout.LayoutParams
-                flp.gravity = if (net >= 0f) (android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL)
-                else (android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL)
+                flp.gravity =
+                    if (net >= 0f) (android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL)
+                    else (android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL)
                 bar.layoutParams = flp
+
+                bar.requestLayout()
             }
 
             applyBar(barA, netA)
@@ -248,9 +267,6 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
             applyBar(barF, netF)
         }
     }
-fun refreshCashflow() {
-    refreshAll()
-}
 
     private fun fetchLast2() {
         Thread {
@@ -275,9 +291,13 @@ fun refreshCashflow() {
                 }
 
                 requireActivity().runOnUiThread {
-                    tvLast2.text = if (lines.isEmpty()) "Last 2: -" else "Last 2:\n" + lines.joinToString("\n")
+                    tvLast2.text =
+                        if (lines.isEmpty()) "Last 2: -"
+                        else "Last 2:\n" + lines.joinToString("\n")
                 }
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+                // ignore
+            }
         }.start()
     }
 }

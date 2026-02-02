@@ -18,7 +18,7 @@ class SummaryFragment : Fragment(R.layout.fragment_summary) {
 
     // ✅ SET YOUR DEPLOYED APPS SCRIPT WEB APP URL HERE
     // Example: https://script.google.com/macros/s/XXXX/exec
-    private val SCRIPT_URL = "PASTE_YOUR_SCRIPT_URL_HERE"
+    private val SCRIPT_URL = "https://script.google.com/macros/s/AKfycby89w6UX6milK8W3FlS_wwQrctg3a6-j1LnJlAca8hSy1i1tj17f0hcPru4FVZwwjTS/exec"
 
     private lateinit var spMonth: Spinner
     private lateinit var btnRefresh: Button
