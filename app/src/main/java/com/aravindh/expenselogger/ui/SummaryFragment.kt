@@ -208,43 +208,48 @@ class SummaryFragment : Fragment(R.layout.fragment_summary) {
     }
 
     private fun renderBarsAndRefLine(a: Float, d: Float, limit: Float) {
-        // Wait until layout measured
-        graphContainer.post {
-            val containerH = graphContainer.height
-            if (containerH <= 0) return@post
+    graphContainer.post {
+        val containerH = graphContainer.height
+        if (containerH <= 0) return@post
 
-            // Some headroom so the ref line/label never goes out of frame
-            val dataMax = max(a, d)
-            val axisMax = max(limit, dataMax) * 1.20f  // ✅ 20% headroom
+        // Keep space for top so ref label never touches edge
+        val topPaddingPx = (containerH * 0.08f).toInt()
+        val usableH = (containerH - topPaddingPx).coerceAtLeast(120)
 
-            // Convert values to bar heights
-            fun heightFor(value: Float): Int {
-                val ratio = (value / axisMax).coerceIn(0f, 1f)
-                // Keep minimum visible bar (tiny spend still visible)
-                val minPx = (containerH * 0.04f).toInt().coerceAtLeast(8)
-                val h = (containerH * ratio).toInt()
-                return max(h, minPx)
-            }
+        val dataMax = max(a, d)
 
-            barA.layoutParams = barA.layoutParams.apply { height = heightFor(a) }
-            barD.layoutParams = barD.layoutParams.apply { height = heightFor(d) }
-            barA.requestLayout()
-            barD.requestLayout()
+        // Axis max with headroom (25%) and also at least limit
+        var axisMax = max(limit, dataMax) * 1.25f
 
-            // Guideline percent is measured from TOP (0 = top, 1 = bottom)
-            // We want ref line at "limit" value, where 0 is bottom.
-            val rawFromBottom = (limit / axisMax).coerceIn(0f, 1f)
-            val percentFromTop = (1f - rawFromBottom)
+        // Optional: round axisMax to a nice number (nearest 1000)
+        axisMax = ((axisMax + 999) / 1000).toInt() * 1000f
 
-            // Clamp so it never touches top edge (your complaint)
-            val clamped = percentFromTop.coerceIn(0.06f, 0.94f)
-
-            val params = guideRef.layoutParams as ConstraintLayout.LayoutParams
-            params.guidePercent = clamped
-            guideRef.layoutParams = params
-            guideRef.requestLayout()
+        fun heightFor(value: Float): Int {
+            val ratio = (value / axisMax).coerceIn(0f, 1f)
+            val minPx = (usableH * 0.05f).toInt().coerceAtLeast(10)
+            val h = (usableH * ratio).toInt()
+            return max(h, minPx)
         }
+
+        barA.layoutParams = barA.layoutParams.apply { height = heightFor(a) }
+        barD.layoutParams = barD.layoutParams.apply { height = heightFor(d) }
+        barA.requestLayout()
+        barD.requestLayout()
+
+        // Guideline percent is from TOP (0 top, 1 bottom)
+        val rawFromBottom = (limit / axisMax).coerceIn(0f, 1f)
+        var percentFromTop = 1f - rawFromBottom
+
+        // Clamp so reference line stays inside plot nicely
+        percentFromTop = percentFromTop.coerceIn(0.10f, 0.92f)
+
+        val params = guideRef.layoutParams as ConstraintLayout.LayoutParams
+        params.guidePercent = percentFromTop
+        guideRef.layoutParams = params
+        guideRef.requestLayout()
     }
+}
+
     
 
     private fun fetchLast2() {

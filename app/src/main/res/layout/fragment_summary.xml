@@ -26,28 +26,21 @@
             android:text="REFRESH"
             android:layout_marginStart="12dp"/>
     </LinearLayout>
+
     <TextView
-    android:id="@+id/tvFamilyTotal"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:text="Family Total: ₹0"
-    android:textStyle="bold"
-    android:layout_marginTop="8dp"/>
+        android:id="@+id/tvFamilyTotal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Family Total: ₹0"
+        android:textStyle="bold"
+        android:layout_marginTop="8dp"/>
 
-<TextView
-    android:id="@+id/tvAlerts"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:text=""
-    android:layout_marginTop="6dp"/>
-
-<TextView
-    android:id="@+id/tvLast2"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:text="Last 2: -"
-    android:layout_marginTop="10dp"/>
-
+    <TextView
+        android:id="@+id/tvAlerts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:layout_marginTop="6dp"/>
 
     <TextView
         android:id="@+id/tvMonthLabel"
@@ -80,11 +73,12 @@
             android:background="#FFF8E1" />
     </LinearLayout>
 
-    <!-- Graph Area -->
+    <!-- ✅ Graph Area: takes remaining screen space -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/graphContainer"
         android:layout_width="match_parent"
-        android:layout_height="260dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="14dp"
         android:background="#F5F5F5"
         android:padding="12dp">
@@ -95,7 +89,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            app:layout_constraintGuide_percent="0.3" />
+            app:layout_constraintGuide_percent="0.30" />
 
         <!-- dashed reference line -->
         <View
@@ -113,6 +107,8 @@
             android:layout_height="wrap_content"
             android:text="Rs.15000"
             android:textStyle="bold"
+            android:paddingStart="6dp"
+            android:paddingBottom="2dp"
             app:layout_constraintBottom_toBottomOf="@id/refLine"
             app:layout_constraintEnd_toEndOf="parent" />
 
@@ -128,7 +124,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <!-- Aravindh bar container -->
+            <!-- Aravindh -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -150,7 +146,7 @@
                     android:paddingTop="6dp"/>
             </LinearLayout>
 
-            <!-- Deepa bar container -->
+            <!-- Deepa -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -175,4 +171,11 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- Last 2 stays visible below graph -->
+    <TextView
+        android:id="@+id/tvLast2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Last 2: -"
+        android:layout_marginTop="10dp"/>
 </LinearLayout>
