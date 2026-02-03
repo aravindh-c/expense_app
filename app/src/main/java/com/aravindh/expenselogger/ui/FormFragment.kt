@@ -26,6 +26,8 @@ class FormFragment : Fragment() {
     }
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private lateinit var spExpenseType: Spinner
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_form, container, false)

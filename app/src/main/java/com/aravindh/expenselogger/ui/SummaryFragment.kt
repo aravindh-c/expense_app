@@ -38,7 +38,9 @@ class SummaryFragment : Fragment(R.layout.fragment_summary) {
     private lateinit var tvDAmount: TextView
 
     private val client = OkHttpClient()
-
+        fun refreshSummary() {
+        refreshAll()
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -243,9 +245,7 @@ class SummaryFragment : Fragment(R.layout.fragment_summary) {
             guideRef.requestLayout()
         }
     }
-    fun refreshSummary() {
-    refreshAll()
-}
+    
 
     private fun fetchLast2() {
         Thread {
