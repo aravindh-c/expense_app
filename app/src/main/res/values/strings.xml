@@ -44,5 +44,34 @@
     <item>SETTLEMENT</item>
     <item>SAVING</item>
 </string-array>
+<string-array name="expense_type_array">
+        <item>Food</item>
+        <item>Apparel</item>
+        <item>Grocery</item>
+        <item>Entertainment</item>
+        <item>Travel</item>
+        <item>Medical</item>
+        <item>Health</item>
+        <item>Insurance</item>
+        <item>School</item>
+        <item>Investment</item>
+        <item>Salary</item>
+        <item>Others</item>
+    </string-array>
+
+    <string-array name="owner_array">
+        <item>Aravindh</item>
+        <item>Deepa</item>
+        <item>Home</item>
+        <item>Parents</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="txn_nature_array">
+        <item>Expense</item>
+        <item>Income</item>
+        <item>Settlement</item>
+        <item>Saving</item>
+    </string-array>
 
 </resources>

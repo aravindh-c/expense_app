@@ -21,36 +21,50 @@ import java.util.Locale
 class FormFragment : Fragment() {
 
     companion object {
-        // TODO: replace with your /exec URL
-        private const val SCRIPT_URL = "https://script.google.com/macros/s/AKfycby89w6UX6milK8W3FlS_wwQrctg3a6-j1LnJlAca8hSy1i1tj17f0hcPru4FVZwwjTS/exec"
+        // ✅ Your deployed /exec URL
+        private const val SCRIPT_URL =
+            "https://script.google.com/macros/s/AKfycby89w6UX6milK8W3FlS_wwQrctg3a6-j1LnJlAca8hSy1i1tj17f0hcPru4FVZwwjTS/exec"
     }
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+    // ✅ Make these class-level so sendToSheet() can access them
+    private lateinit var spTxNature: Spinner
     private lateinit var spExpenseType: Spinner
+    private lateinit var spOwner: Spinner
 
+    private lateinit var etExpenseTypeOther: EditText
+    private lateinit var etOwnerOther: EditText
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return inflater.inflate(R.layout.fragment_form, container, false)
-    }
+    private val client = OkHttpClient()
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View = inflater.inflate(R.layout.fragment_form, container, false)
 
     override fun onViewCreated(root: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(root, savedInstanceState)
+
         // --- Bind views from fragment_form.xml ---
         val etDate = root.findViewById<EditText>(R.id.etDate)
         val btnYesterday = root.findViewById<Button>(R.id.btnYesterday)
         val btnToday = root.findViewById<Button>(R.id.btnToday)
-        val spTxNature = root.findViewById<Spinner>(R.id.spTxNature)
 
         val etName = root.findViewById<EditText>(R.id.etName)
         val etAmount = root.findViewById<EditText>(R.id.etAmount)
 
         val rgPaymentType = root.findViewById<RadioGroup>(R.id.rgPaymentType)
-        val spExpenseType = root.findViewById<Spinner>(R.id.spExpenseType)
-        val etExpenseTypeOther = root.findViewById<EditText>(R.id.etExpenseTypeOther)
-
-        val spOwner = root.findViewById<Spinner>(R.id.spOwner)
-        val etOwnerOther = root.findViewById<EditText>(R.id.etOwnerOther)
-
         val rgLoggedBy = root.findViewById<RadioGroup>(R.id.rgLoggedBy)
+
+        spTxNature = root.findViewById(R.id.spTxNature)
+        spExpenseType = root.findViewById(R.id.spExpenseType)
+        etExpenseTypeOther = root.findViewById(R.id.etExpenseTypeOther)
+
+        spOwner = root.findViewById(R.id.spOwner)
+        etOwnerOther = root.findViewById(R.id.etOwnerOther)
+
         val btnSubmit = root.findViewById<Button>(R.id.btnSubmit)
 
         // --- Date picker + quick buttons ---
@@ -66,45 +80,68 @@ class FormFragment : Fragment() {
             etDate.setText(dateFormat.format(cal.time))
         }
 
-        // --- Expense Type spinner ---
-        val expenseTypes = resources.getStringArray(R.array.expense_type_array)
-        spExpenseType.adapter =
-            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, expenseTypes)
+        // --- Tx Nature spinner ---
+        // IMPORTANT: you MUST have <string-array name="txn_nature_array"> in strings.xml
+        val txNatureList = resources.getStringArray(R.array.txn_nature_array)
+        spTxNature.adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_dropdown_item,
+            txNatureList
+        )
 
+        // --- Category spinner (dynamic based on tx nature, without extra XML arrays) ---
+        fun getCategoriesForNature(nature: String): List<String> {
+            val n = nature.trim().lowercase(Locale.getDefault())
+            return when (n) {
+                "income" -> listOf("Salary", "Investment", "Insurance", "Other")
+                "settlement" -> listOf("Credit Card Settlement", "Loan EMI", "Other")
+                "saving" -> listOf("Savings", "Investment", "Other")
+                else -> listOf(
+                    "Food", "Apparel", "Grocery", "Entertainment", "Travel", "Medical",
+                    "Health", "Insurance", "School", "Others"
+                )
+            }
+        }
+
+        fun setCategoryAdapter(values: List<String>) {
+            spExpenseType.adapter = ArrayAdapter(
+                requireContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                values
+            )
+        }
+
+        // initial category load (based on initial txNature selection)
+        setCategoryAdapter(getCategoriesForNature(spTxNature.selectedItem?.toString() ?: "Expense"))
+
+        spTxNature.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, v: View?, pos: Int, id: Long) {
+                val nature = parent.getItemAtPosition(pos).toString()
+                setCategoryAdapter(getCategoriesForNature(nature))
+                etExpenseTypeOther.visibility = View.GONE
+                spExpenseType.setSelection(0)
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+        // show Other field when needed
         spExpenseType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, v: View?, pos: Int, id: Long) {
-                val selected = parent.getItemAtPosition(pos).toString()
+                val selected = parent.getItemAtPosition(pos).toString().trim()
                 etExpenseTypeOther.visibility =
-                    if (selected.equals("Other", ignoreCase = true)) View.VISIBLE else View.GONE
+                    if (selected.equals("Other", true) || selected.equals("Others", true)) View.VISIBLE else View.GONE
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
         // --- Owner spinner ---
+        // IMPORTANT: you MUST have <string-array name="owner_array"> in strings.xml
         val owners = resources.getStringArray(R.array.owner_array)
-        spTxNature.adapter = ArrayAdapter(
+        spOwner.adapter = ArrayAdapter(
             requireContext(),
             android.R.layout.simple_spinner_dropdown_item,
-            resources.getStringArray(R.array.tx_nature)
+            owners
         )
-        spTxNature.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-    override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
-        val nature = parent.getItemAtPosition(pos).toString()
-        when (nature) {
-            "INCOME" -> setCategoryAdapter(R.array.cat_income)
-            "SETTLEMENT" -> setCategoryAdapter(R.array.cat_settlement)
-            "SAVING" -> setCategoryAdapter(R.array.cat_saving)
-            else -> setCategoryAdapter(R.array.cat_spend)
-        }
-        // hide "other" input by default; show only if selected "Other"
-        etExpenseTypeOther.visibility = View.GONE
-        spExpenseType.setSelection(0)
-    }
-    override fun onNothingSelected(parent: AdapterView<*>) {}
-}
-
-        spOwner.adapter =
-            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, owners)
 
         spOwner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, v: View?, pos: Int, id: Long) {
@@ -121,6 +158,15 @@ class FormFragment : Fragment() {
         etExpenseTypeOther.addTextChangedListener { etExpenseTypeOther.error = null }
         etOwnerOther.addTextChangedListener { etOwnerOther.error = null }
 
+        // Helper: works even if RadioButtons don't have IDs
+        fun getCheckedRadioText(group: RadioGroup): String? {
+            for (i in 0 until group.childCount) {
+                val child = group.getChildAt(i)
+                if (child is RadioButton && child.isChecked) return child.text.toString()
+            }
+            return null
+        }
+
         // --- Submit ---
         btnSubmit.setOnClickListener {
             val date = etDate.text.toString().trim()
@@ -133,19 +179,20 @@ class FormFragment : Fragment() {
             val amount = amountStr.toDoubleOrNull()
             if (amount == null || amount <= 0) { etAmount.error = "Enter valid amount"; return@setOnClickListener }
 
-            val payId = rgPaymentType.checkedRadioButtonId
-            if (payId == -1) { toast("Select payment type"); return@setOnClickListener }
-            val paymentType = root.findViewById<RadioButton>(payId).text.toString()
+            val paymentType = getCheckedRadioText(rgPaymentType)
+            if (paymentType.isNullOrBlank()) { toast("Select payment type"); return@setOnClickListener }
 
-            val expTypeSel = spExpenseType.selectedItem.toString()
-            val expenseType =
-                if (expTypeSel.equals("Other", true)) {
+            val txNature = spTxNature.selectedItem?.toString()?.trim().orEmpty()
+
+            val catSel = spExpenseType.selectedItem?.toString()?.trim().orEmpty()
+            val category =
+                if (catSel.equals("Other", true) || catSel.equals("Others", true)) {
                     val other = etExpenseTypeOther.text.toString().trim()
-                    if (other.isEmpty()) { etExpenseTypeOther.error = "Enter expense type"; return@setOnClickListener }
+                    if (other.isEmpty()) { etExpenseTypeOther.error = "Enter category"; return@setOnClickListener }
                     other
-                } else expTypeSel
+                } else catSel
 
-            val ownerSel = spOwner.selectedItem.toString()
+            val ownerSel = spOwner.selectedItem?.toString()?.trim().orEmpty()
             val expenseOwner =
                 if (ownerSel.equals("Other", true)) {
                     val other = etOwnerOther.text.toString().trim()
@@ -153,18 +200,18 @@ class FormFragment : Fragment() {
                     other
                 } else ownerSel
 
-            val loggedId = rgLoggedBy.checkedRadioButtonId
-            if (loggedId == -1) { toast("Select Logged By"); return@setOnClickListener }
-            val loggedBy = root.findViewById<RadioButton>(loggedId).text.toString()
+            val loggedBy = getCheckedRadioText(rgLoggedBy)
+            if (loggedBy.isNullOrBlank()) { toast("Select Logged By"); return@setOnClickListener }
 
             sendToSheet(
                 date = date,
                 name = name,
                 amount = amount,
                 paymentType = paymentType,
-                expenseType = expenseType,
-                expenseOwner = expenseOwner,
+                category = category,
+                ownerPaid = expenseOwner,
                 loggedBy = loggedBy,
+                txNature = txNature,
                 onSuccess = {
                     requireActivity().runOnUiThread {
                         toast("Saved!")
@@ -172,6 +219,7 @@ class FormFragment : Fragment() {
                         etAmount.setText("")
                         rgPaymentType.clearCheck()
                         rgLoggedBy.clearCheck()
+                        spTxNature.setSelection(0)
                         spExpenseType.setSelection(0)
                         spOwner.setSelection(0)
                         etExpenseTypeOther.setText("")
@@ -204,26 +252,25 @@ class FormFragment : Fragment() {
         name: String,
         amount: Double,
         paymentType: String,
-        expenseType: String,
-        expenseOwner: String,
+        category: String,
+        ownerPaid: String,
         loggedBy: String,
+        txNature: String,
         onSuccess: () -> Unit
     ) {
         toast("Sending...")
 
         Thread {
             try {
-                val client = OkHttpClient()
                 val payload = JSONObject().apply {
                     put("date", date)
                     put("name", name)
                     put("amount", amount)
                     put("paymentType", paymentType)
-                    put("expenseType", expenseType)
-                    put("expenseOwner", expenseOwner)
+                    put("expenseType", category)      // keep same key your Apps Script expects
+                    put("expenseOwner", ownerPaid)    // "who paid"
                     put("loggedBy", loggedBy)
-                    put("txNature", spTxNature.selectedItem.toString())
-
+                    put("txNature", txNature)
                 }
 
                 val body = payload.toString()
@@ -251,13 +298,6 @@ class FormFragment : Fragment() {
             }
         }.start()
     }
-    fun setCategoryAdapter(arrayRes: Int) {
-    spExpenseType.adapter = ArrayAdapter(
-        requireContext(),
-        android.R.layout.simple_spinner_dropdown_item,
-        resources.getStringArray(arrayRes)
-    )
-}
 
     private fun toast(msg: String) {
         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
