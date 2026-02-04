@@ -1,6 +1,7 @@
 package com.aravindh.expenselogger.ui
 
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -10,6 +11,7 @@ import com.aravindh.expenselogger.R
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.math.abs
@@ -77,12 +79,12 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
                 setMonthSpinner(months)
                 refreshAll()
             } else {
-                Toast.makeText(requireContext(), "No months found in sheet", Toast.LENGTH_SHORT).show()
+                toast("No months found in sheet")
             }
         }
     }
 
-    /** Call this from MainActivity when user lands on page 3 */
+    /** Call this from MainActivity when user lands on page-3 */
     fun refreshCashflow() {
         refreshAll()
     }
@@ -91,35 +93,10 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
         val month = getSelectedMonthValue()
         if (month.isEmpty()) return
         setMonthLabel(month)
+
         fetchCashflow(month) { ok ->
             if (ok) fetchLast2()
         }
-    }
-
-    // ---------------- Months dropdown ----------------
-
-    private fun fetchMonths(onDone: (List<String>) -> Unit) {
-        Thread {
-            try {
-                val req = Request.Builder().url("$SCRIPT_URL?mode=months").get().build()
-                val res = client.newCall(req).execute()
-                val body = res.body?.string().orEmpty()
-
-                if (!res.isSuccessful) {
-                    requireActivity().runOnUiThread { onDone(emptyList()) }
-                    return@Thread
-                }
-
-                val json = JSONObject(body)
-                val arr = json.optJSONArray("months")
-                val list = mutableListOf<String>()
-                if (arr != null) for (i in 0 until arr.length()) list.add(arr.getString(i))
-
-                requireActivity().runOnUiThread { onDone(list) }
-            } catch (_: Exception) {
-                requireActivity().runOnUiThread { onDone(emptyList()) }
-            }
-        }.start()
     }
 
     private fun setMonthSpinner(months: List<String>) {
@@ -133,8 +110,12 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
             }
         }
 
-        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, display)
-        spMonth.adapter = adapter
+        spMonth.adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_dropdown_item,
+            display
+        )
+
         spMonth.tag = months
 
         spMonth.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -162,139 +143,140 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
         tvMonthLabel.text = label
     }
 
-    // ---------------- Cashflow fetch + parse (supports BOTH JSON formats) ----------------
+    private fun fetchMonths(onDone: (List<String>) -> Unit) {
+        Thread {
+            try {
+                val req = Request.Builder().url("$SCRIPT_URL?mode=months").get().build()
+                val res = client.newCall(req).execute()
+                val body = res.body?.string().orEmpty()
 
-    private data class Flow(val income: Float, val out: Float, val net: Float)
+                if (!res.isSuccessful) {
+                    requireActivity().runOnUiThread { onDone(emptyList()) }
+                    return@Thread
+                }
 
+                val json = JSONObject(body)
+                val arr = json.optJSONArray("months")
+                val list = mutableListOf<String>()
+                if (arr != null) for (i in 0 until arr.length()) list.add(arr.getString(i))
+
+                requireActivity().runOnUiThread { onDone(list) }
+            } catch (_: Exception) {
+                requireActivity().runOnUiThread { onDone(emptyList()) }
+            }
+        }.start()
+    }
+
+    /**
+     * Expects JSON shape:
+     * {
+     *  status:"OK",
+     *  month:"yyyy-MM",
+     *  aravindh:{in,out,net},
+     *  deepa:{in,out,net},
+     *  family:{in,out,net}
+     * }
+     */
     private fun fetchCashflow(month: String, onDone: (Boolean) -> Unit) {
         Thread {
             try {
-                val url = "$SCRIPT_URL?mode=cashflow&month=$month"
+                val monthEnc = URLEncoder.encode(month, "UTF-8")
+                val url = "$SCRIPT_URL?mode=cashflow&month=$monthEnc"
                 val req = Request.Builder().url(url).get().build()
                 val res = client.newCall(req).execute()
                 val body = res.body?.string().orEmpty()
 
                 if (!res.isSuccessful) {
                     requireActivity().runOnUiThread {
-                        Toast.makeText(requireContext(), "Cashflow error: ${res.code}", Toast.LENGTH_SHORT).show()
+                        toast("Cashflow error: ${res.code}")
                         onDone(false)
                     }
                     return@Thread
                 }
 
+                // If script accidentally returns "OK" or HTML, this will throw -> parse error
                 val json = JSONObject(body)
 
-                // ---- Format A (your current Apps Script):
-                // aravindh:{in,out,net}, deepa:{in,out,net}, family:{in,out,net}
-                fun parseFormatA(key: String): Flow? {
-                    if (!json.has(key)) return null
-                    val obj = json.getJSONObject(key)
-                    val income = obj.optDouble("in", 0.0).toFloat()
-                    val out = obj.optDouble("out", 0.0).toFloat()
-                    val net = obj.optDouble("net", (income - out).toDouble()).toFloat()
-                    return Flow(income, out, net)
-                }
+                val aObj = json.getJSONObject("aravindh")
+                val dObj = json.getJSONObject("deepa")
+                val fObj = json.getJSONObject("family")
 
-                // ---- Format B (older idea):
-                // users:{Aravindh:{income,spend,settlement,saving,net}, ...}, family:{...}
-                fun parseFormatBUser(name: String): Flow? {
-                    if (!json.has("users")) return null
-                    val users = json.getJSONObject("users")
-                    if (!users.has(name)) return null
-                    val obj = users.getJSONObject(name)
-                    val income = obj.optDouble("income", 0.0).toFloat()
-                    val spend = obj.optDouble("spend", 0.0).toFloat()
-                    val settlement = obj.optDouble("settlement", 0.0).toFloat()
-                    val saving = obj.optDouble("saving", 0.0).toFloat()
-                    val out = spend + settlement + saving
-                    val net = obj.optDouble("net", (income - out).toDouble()).toFloat()
-                    return Flow(income, out, net)
-                }
+                val aIn = aObj.optDouble("in", 0.0).toFloat()
+                val aOut = aObj.optDouble("out", 0.0).toFloat()
+                val aNet = aObj.optDouble("net", (aIn - aOut).toDouble()).toFloat()
 
-                fun parseFormatBFamily(): Flow? {
-                    if (!json.has("family")) return null
-                    val obj = json.getJSONObject("family")
-                    // could be either {in,out,net} OR {income,spend...}
-                    val in1 = obj.optDouble("in", Double.NaN)
-                    if (!in1.isNaN()) {
-                        val income = in1.toFloat()
-                        val out = obj.optDouble("out", 0.0).toFloat()
-                        val net = obj.optDouble("net", (income - out).toDouble()).toFloat()
-                        return Flow(income, out, net)
-                    }
-                    val income = obj.optDouble("income", 0.0).toFloat()
-                    val spend = obj.optDouble("spend", 0.0).toFloat()
-                    val settlement = obj.optDouble("settlement", 0.0).toFloat()
-                    val saving = obj.optDouble("saving", 0.0).toFloat()
-                    val out = spend + settlement + saving
-                    val net = obj.optDouble("net", (income - out).toDouble()).toFloat()
-                    return Flow(income, out, net)
-                }
+                val dIn = dObj.optDouble("in", 0.0).toFloat()
+                val dOut = dObj.optDouble("out", 0.0).toFloat()
+                val dNet = dObj.optDouble("net", (dIn - dOut).toDouble()).toFloat()
 
-                val a = parseFormatA("aravindh") ?: parseFormatBUser("Aravindh") ?: Flow(0f, 0f, 0f)
-                val d = parseFormatA("deepa") ?: parseFormatBUser("Deepa") ?: Flow(0f, 0f, 0f)
-                val f = parseFormatA("family") ?: parseFormatBFamily() ?: Flow(a.income + d.income, a.out + d.out, (a.income + d.income) - (a.out + d.out))
+                val fIn = fObj.optDouble("in", 0.0).toFloat()
+                val fOut = fObj.optDouble("out", 0.0).toFloat()
+                val fNet = fObj.optDouble("net", (fIn - fOut).toDouble()).toFloat()
 
                 requireActivity().runOnUiThread {
-                    tvBreakA.text = "In ₹%.0f / Out ₹%.0f".format(a.income, a.out)
-                    tvBreakD.text = "In ₹%.0f / Out ₹%.0f".format(d.income, d.out)
-                    tvBreakF.text = "In ₹%.0f / Out ₹%.0f".format(f.income, f.out)
+                    tvBreakA.text = "In ₹%.0f / Out ₹%.0f".format(aIn, aOut)
+                    tvBreakD.text = "In ₹%.0f / Out ₹%.0f".format(dIn, dOut)
+                    tvBreakF.text = "In ₹%.0f / Out ₹%.0f".format(fIn, fOut)
 
-                    tvNetA.text = "₹%.0f".format(a.net)
-                    tvNetD.text = "₹%.0f".format(d.net)
-                    tvNetF.text = "₹%.0f".format(f.net)
+                    tvNetA.text = "₹%.0f".format(aNet)
+                    tvNetD.text = "₹%.0f".format(dNet)
+                    tvNetF.text = "₹%.0f".format(fNet)
 
-                    tvFamily.text = "Family: Income ₹%.0f | Out ₹%.0f | Net ₹%.0f".format(f.income, f.out, f.net)
+                    tvFamily.text = "Family: In ₹%.0f | Out ₹%.0f | Net ₹%.0f".format(fIn, fOut, fNet)
 
-                    renderNetBars(a.net, d.net, f.net)
+                    renderNetBars(aNet, dNet, fNet)
                     onDone(true)
                 }
 
             } catch (e: Exception) {
                 requireActivity().runOnUiThread {
-                    Toast.makeText(requireContext(), "Cashflow parse error", Toast.LENGTH_SHORT).show()
+                    // show first chars so you can see if it's "OK" or HTML
+                    toast("Cashflow parse error: ${e.message}")
                     onDone(false)
                 }
             }
         }.start()
     }
 
-    // ---------------- Bars (safe layoutParams handling) ----------------
-
+    /**
+     * Bars around a zero-line in the middle.
+     * +ve grows UP from center, -ve grows DOWN from center.
+     */
     private fun renderNetBars(netA: Float, netD: Float, netF: Float) {
         graph.post {
             val containerH = graph.height
             if (containerH <= 0) return@post
 
-            // keep 0-line mid
-            val gp = guideZero.layoutParams as ConstraintLayout.LayoutParams
-            gp.guidePercent = 0.5f
-            guideZero.layoutParams = gp
+            // Zero line at center
+            val gParams = guideZero.layoutParams as ConstraintLayout.LayoutParams
+            gParams.guidePercent = 0.5f
+            guideZero.layoutParams = gParams
 
             val maxAbs = max(max(abs(netA), abs(netD)), abs(netF)).coerceAtLeast(1f)
-            val axis = maxAbs * 1.25f // 25% headroom
+            val headroom = maxAbs * 0.20f
+            val axis = maxAbs + headroom
 
-            val halfH = (containerH * 0.42f).toInt() // space for top/bottom labels
-            val minPx = (containerH * 0.05f).toInt().coerceAtLeast(10)
+            val usableHalf = (containerH * 0.42f).toInt() // space for labels
+            val minPx = (containerH * 0.05f).toInt().coerceAtLeast(8)
 
             fun applyBar(bar: View, net: Float) {
                 val ratio = (abs(net) / axis).coerceIn(0f, 1f)
-                val h = max((halfH * ratio).toInt(), minPx)
+                val h = max((usableHalf * ratio).toInt(), minPx)
 
-                // height
-                val lp = bar.layoutParams
-                lp.height = h
-                bar.layoutParams = lp
-
-                // If bar is inside FrameLayout, align to TOP/BOTTOM safely.
-                val flp = bar.layoutParams
-                if (flp is FrameLayout.LayoutParams) {
-                    flp.gravity =
-                        if (net >= 0f) (android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL)
-                        else (android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL)
+                val flp = bar.layoutParams as? FrameLayout.LayoutParams
+                if (flp != null) {
+                    flp.height = h
+                    flp.gravity = if (net >= 0f)
+                        (Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
+                    else
+                        (Gravity.TOP or Gravity.CENTER_HORIZONTAL)
                     bar.layoutParams = flp
+                } else {
+                    // fallback: at least set height
+                    val lp = bar.layoutParams
+                    lp.height = h
+                    bar.layoutParams = lp
                 }
-
                 bar.requestLayout()
             }
 
@@ -303,8 +285,6 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
             applyBar(barF, netF)
         }
     }
-
-    // ---------------- Last2 ----------------
 
     private fun fetchLast2() {
         Thread {
@@ -337,5 +317,9 @@ class CashflowFragment : Fragment(R.layout.fragment_cashflow) {
                 // ignore
             }
         }.start()
+    }
+
+    private fun toast(msg: String) {
+        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
     }
 }
