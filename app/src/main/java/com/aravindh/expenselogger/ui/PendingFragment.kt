@@ -40,6 +40,9 @@ class PendingFragment : Fragment(R.layout.fragment_pending) {
 
     private val client = OkHttpClient()
 
+    private val txNatureList = listOf("Expense", "Income", "Settlement", "Saving")
+    private val paymentTypeList = listOf("UPI", "Card", "NEFT", "IMPS", "NACH", "Cash", "Other")
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -62,7 +65,6 @@ class PendingFragment : Fragment(R.layout.fragment_pending) {
         refreshList()
     }
 
-    /** Called by MainActivity when user swipes to this tab */
     fun refreshPending() {
         checkPermission()
         updateLastScannedLabel()
@@ -123,58 +125,107 @@ class PendingFragment : Fragment(R.layout.fragment_pending) {
         val dialogView = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_process_sms, null)
 
-        val tvInfo = dialogView.findViewById<TextView>(R.id.tvDialogInfo)
-        val spCategory = dialogView.findViewById<Spinner>(R.id.spCategory)
-        val spOwner = dialogView.findViewById<Spinner>(R.id.spOwner)
+        val tvInfo       = dialogView.findViewById<TextView>(R.id.tvDialogInfo)
+        val spTxNature   = dialogView.findViewById<Spinner>(R.id.spTxNature)
+        val spPaymentType = dialogView.findViewById<Spinner>(R.id.spPaymentType)
+        val spCategory   = dialogView.findViewById<Spinner>(R.id.spCategory)
+        val spOwner      = dialogView.findViewById<Spinner>(R.id.spOwner)
 
-        tvInfo.text = "₹%.0f  %s  %s\n%s · %s".format(
+        tvInfo.text = "₹%.0f  |  %s  |  %s\n%s · %s".format(
             item.amount, item.merchant, item.date, item.bank, item.paymentType
         )
 
-        // Category list based on txNature
-        val categories = categoriesFor(item.txNature)
-        spCategory.adapter = ArrayAdapter(
-            requireContext(), android.R.layout.simple_spinner_dropdown_item, categories
+        // --- Transaction Nature ---
+        spTxNature.adapter = ArrayAdapter(
+            requireContext(), android.R.layout.simple_spinner_dropdown_item, txNatureList
         )
+        val natureIdx = txNatureList.indexOfFirst { it.equals(item.txNature, ignoreCase = true) }
+        if (natureIdx >= 0) spTxNature.setSelection(natureIdx)
 
-        // Owner list — pre-select logged-in user
+        // --- Payment Type ---
+        spPaymentType.adapter = ArrayAdapter(
+            requireContext(), android.R.layout.simple_spinner_dropdown_item, paymentTypeList
+        )
+        val ptIdx = paymentTypeList.indexOfFirst { it.equals(item.paymentType, ignoreCase = true) }
+        if (ptIdx >= 0) spPaymentType.setSelection(ptIdx)
+
+        // --- Category: updates when txNature changes ---
+        fun refreshCategories(nature: String) {
+            val cats = categoriesFor(nature)
+            spCategory.adapter = ArrayAdapter(
+                requireContext(), android.R.layout.simple_spinner_dropdown_item, cats
+            )
+        }
+        refreshCategories(item.txNature)
+
+        spTxNature.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, v: View?, pos: Int, id: Long) {
+                refreshCategories(parent.getItemAtPosition(pos).toString())
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+        // --- Owner pre-select logged-in user ---
+        val loggedBy = requireContext()
+            .getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            .getString("logged_by", "") ?: ""
         val owners = resources.getStringArray(R.array.owner_array).toList()
         spOwner.adapter = ArrayAdapter(
             requireContext(), android.R.layout.simple_spinner_dropdown_item, owners
         )
-        val loggedBy = requireContext()
-            .getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-            .getString("logged_by", "") ?: ""
         val ownerIdx = owners.indexOfFirst { it.equals(loggedBy, ignoreCase = true) }
         if (ownerIdx >= 0) spOwner.setSelection(ownerIdx)
 
-        AlertDialog.Builder(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Process Transaction")
             .setView(dialogView)
             .setPositiveButton("Submit") { _, _ ->
                 submitEntry(
                     item,
-                    spCategory.selectedItem?.toString() ?: "",
-                    spOwner.selectedItem?.toString() ?: "",
-                    loggedBy
+                    txNature    = spTxNature.selectedItem?.toString() ?: item.txNature,
+                    paymentType = spPaymentType.selectedItem?.toString() ?: item.paymentType,
+                    category    = spCategory.selectedItem?.toString() ?: "",
+                    owner       = spOwner.selectedItem?.toString() ?: "",
+                    loggedBy    = loggedBy
                 )
+            }
+            .setNeutralButton("Delete") { _, _ ->
+                Thread {
+                    AppDatabase.get(requireContext()).smsDao().markProcessed(item.id)
+                    requireActivity().runOnUiThread {
+                        Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show()
+                        refreshList()
+                    }
+                }.start()
             }
             .setNegativeButton("Skip", null)
             .show()
+
+        // Make Delete button red
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(
+            android.graphics.Color.parseColor("#E53935")
+        )
     }
 
-    private fun submitEntry(item: PendingSms, category: String, owner: String, loggedBy: String) {
+    private fun submitEntry(
+        item: PendingSms,
+        txNature: String,
+        paymentType: String,
+        category: String,
+        owner: String,
+        loggedBy: String
+    ) {
         Thread {
             try {
                 val payload = JSONObject().apply {
                     put("date", item.date)
                     put("name", item.merchant)
                     put("amount", item.amount)
-                    put("paymentType", item.paymentType)
+                    put("paymentType", paymentType)
                     put("expenseType", category)
                     put("expenseOwner", owner)
                     put("loggedBy", loggedBy)
-                    put("txNature", item.txNature)
+                    put("txNature", txNature)
                     put("bank", item.bank)
                 }
 

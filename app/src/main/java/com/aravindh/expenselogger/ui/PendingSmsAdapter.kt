@@ -18,6 +18,7 @@ class PendingSmsAdapter(
         val tvAmount: TextView = view.findViewById(R.id.tvAmount)
         val tvDate: TextView = view.findViewById(R.id.tvDate)
         val tvBankType: TextView = view.findViewById(R.id.tvBankType)
+        val rowTapArea: View = view.findViewById(R.id.rowTapArea)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -32,7 +33,7 @@ class PendingSmsAdapter(
         holder.tvAmount.text = "₹%.0f".format(item.amount)
         holder.tvDate.text = item.date
         holder.tvBankType.text = "${item.bank} · ${item.paymentType}"
-        holder.itemView.setOnClickListener { onItemClick(item) }
+        holder.rowTapArea.setOnClickListener { onItemClick(item) }
     }
 
     override fun getItemCount() = items.size

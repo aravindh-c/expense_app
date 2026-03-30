@@ -13,8 +13,8 @@ object SmsScanJob {
     // Scan SMS inbox for the past 7 days
     private const val SCAN_WINDOW_MS = 7L * 24 * 60 * 60 * 1000
 
-    // Skip tiny cashbacks below this amount (Income type)
-    private const val MIN_INCOME_AMOUNT = 10.0
+    // Skip tiny transactions below this amount (all types)
+    private const val MIN_AMOUNT = 50.0
 
     fun scan(context: Context) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_SMS)
@@ -56,8 +56,8 @@ object SmsScanJob {
                 // Skip if already stored by ref number
                 if (parsed.ref.isNotEmpty() && existingRefs.contains(parsed.ref)) continue
 
-                // Skip tiny cashbacks
-                if (parsed.txNature == "Income" && parsed.amount < MIN_INCOME_AMOUNT) continue
+                // Skip tiny transactions below ₹50
+                if (parsed.amount < MIN_AMOUNT) continue
 
                 dao.insert(
                     PendingSms(

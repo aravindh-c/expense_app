@@ -1,42 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_height="wrap_content">
 
-    <!-- Transaction info: read-only -->
-    <TextView
-        android:id="@+id/tvDialogInfo"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:paddingBottom="14dp"
-        android:textColor="#333333" />
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Category"
-        android:textSize="13sp"
-        android:paddingBottom="2dp" />
+        <!-- Transaction info: read-only -->
+        <TextView
+            android:id="@+id/tvDialogInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#333333"
+            android:background="#F5F5F5"
+            android:padding="10dp"
+            android:layout_marginBottom="14dp" />
 
-    <Spinner
-        android:id="@+id/spCategory"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="14dp" />
+        <!-- Transaction Nature -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Transaction Nature"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="2dp" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Owner"
-        android:textSize="13sp"
-        android:paddingBottom="2dp" />
+        <Spinner
+            android:id="@+id/spTxNature"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp" />
 
-    <Spinner
-        android:id="@+id/spOwner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        <!-- Payment Type -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Payment Type"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="2dp" />
 
-</LinearLayout>
+        <Spinner
+            android:id="@+id/spPaymentType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Category -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Category"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="2dp" />
+
+        <Spinner
+            android:id="@+id/spCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Owner -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Owner"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="2dp" />
+
+        <Spinner
+            android:id="@+id/spOwner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+</ScrollView>
