@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Header: title + scan button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="2dp">
+
+        <TextView
+            android:id="@+id/tvPendingTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Pending SMS"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnScanNow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Scan Now"
+            style="@style/Widget.AppCompat.Button.Small" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvLastScanned"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Last scanned: never"
+        android:textSize="12sp"
+        android:textColor="#888888"
+        android:paddingBottom="6dp" />
+
+    <!-- Shown when READ_SMS permission not granted -->
+    <TextView
+        android:id="@+id/tvPermissionHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SMS permission needed. Tap here to grant."
+        android:textColor="#E53935"
+        android:paddingBottom="6dp"
+        android:visibility="gone" />
+
+    <!-- Empty state -->
+    <TextView
+        android:id="@+id/tvEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No pending SMS transactions"
+        android:textColor="#888888"
+        android:gravity="center"
+        android:paddingTop="40dp"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvPending"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>

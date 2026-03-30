@@ -152,6 +152,20 @@ class FormFragment : Fragment() {
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
+        // Pre-select LoggedBy based on stored identity
+        val identity = requireContext()
+            .getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+            .getString("logged_by", null)
+        if (identity != null) {
+            for (i in 0 until rgLoggedBy.childCount) {
+                val child = rgLoggedBy.getChildAt(i)
+                if (child is android.widget.RadioButton && child.text.toString().equals(identity, ignoreCase = true)) {
+                    child.isChecked = true
+                    break
+                }
+            }
+        }
+
         // clear errors when typing
         etName.addTextChangedListener { etName.error = null }
         etAmount.addTextChangedListener { etAmount.error = null }
